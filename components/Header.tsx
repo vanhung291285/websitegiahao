@@ -107,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({ config, menuItems, onNavigate, a
          </div>
       </div>
 
-      {/* 3. NAVIGATION BAR - Sử dụng màu chủ đạo cho Menu */}
+      {/* 3. NAVIGATION BAR - Cải thiện khoảng cách chữ và kích thước */}
       <div 
         className="shadow-xl border-t-4 border-yellow-500 sticky top-0 z-40"
         style={{ backgroundColor: primaryBg }}
@@ -119,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({ config, menuItems, onNavigate, a
                       <button
                         key={item.id}
                         onClick={() => handleNav(item.path)}
-                        className={`px-5 py-3.5 text-[16px] font-bold uppercase transition-all duration-200 border-r border-white/10 hover:bg-white/10 tracking-tight ${
+                        className={`px-6 py-4 text-[17px] font-black uppercase transition-all duration-200 border-r border-white/10 hover:bg-white/10 tracking-wider ${
                           activePath === item.path || (activePath === 'news-detail' && item.path === 'news')
                             ? 'bg-black/20 text-yellow-400 border-b-4 border-yellow-400' 
                             : 'text-white border-b-4 border-transparent'
@@ -140,14 +140,14 @@ export const Header: React.FC<HeaderProps> = ({ config, menuItems, onNavigate, a
               <button
                 key={item.id}
                 onClick={() => handleNav(item.path)}
-                className={`text-left font-bold p-4 uppercase text-base tracking-tight ${
+                className={`text-left font-black p-5 uppercase text-lg tracking-wide ${
                   activePath === item.path ? 'bg-blue-50 text-blue-800 border-l-8 border-blue-600' : 'text-gray-900 hover:bg-gray-50'
                 }`}
               >
                 {item.label}
               </button>
             ))}
-            <button onClick={() => handleNav('login')} className="text-left font-bold p-4 text-red-700 bg-red-50 flex items-center gap-2 text-base tracking-tight">
+            <button onClick={() => handleNav('login')} className="text-left font-black p-5 text-red-700 bg-red-50 flex items-center gap-2 text-lg tracking-wide">
                <LogIn size={22}/> ĐĂNG NHẬP HỆ THỐNG
             </button>
           </div>

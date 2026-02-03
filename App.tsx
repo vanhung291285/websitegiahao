@@ -340,8 +340,9 @@ const App: React.FC = () => {
                     const cat = postCategories.find(c => c.slug === post.category);
                     return (
                     <div key={post.id} onClick={() => navigate('news-detail', post.id)} className="group cursor-pointer flex flex-col h-full">
-                    <div className="overflow-hidden rounded mb-3 border border-gray-200">
-                        <img src={post.thumbnail} className="h-48 w-full object-cover transform group-hover:scale-105 transition duration-500" alt={post.title}/>
+                    <div className="overflow-hidden rounded mb-3 border border-gray-200 bg-gray-50">
+                        {/* CHỈNH SỬA: Thêm brightness-110 */}
+                        <img src={post.thumbnail} className="h-48 w-full object-cover brightness-110 transform group-hover:scale-105 transition duration-500" alt={post.title}/>
                     </div>
                     <span className={`text-xs font-bold uppercase mb-1 block text-${cat?.color || 'blue'}-600`}>
                         {cat?.name || 'Tin tức'}

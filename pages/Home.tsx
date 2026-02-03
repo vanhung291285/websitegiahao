@@ -159,7 +159,7 @@ export const Home: React.FC<HomeProps> = ({
                                 <tr key={staff.id} className="hover:bg-slate-50 transition-colors group">
                                     <td className="py-4 px-6">
                                         <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md bg-gray-100 group-hover:scale-110 transition-transform">
-                                            {staff.avatarUrl ? <img src={staff.avatarUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><User size={24}/></div>}
+                                            {staff.avatarUrl ? <img src={staff.avatarUrl} alt={staff.fullName} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><User size={24}/></div>}
                                         </div>
                                     </td>
                                     <td className="py-4 px-6">
@@ -217,7 +217,7 @@ export const Home: React.FC<HomeProps> = ({
                 <div className="md:col-span-4 flex flex-col gap-2 h-[300px] md:h-[520px]">
                     {subHeros.map(sub => (
                         <div key={sub.id} className="relative flex-1 group cursor-pointer overflow-hidden bg-gray-900" onClick={() => onNavigate('news-detail', sub.id)}>
-                            <img src={sub.thumbnail} alt={sub.title} className="w-full h-full object-cover opacity-100 brightness-110 group-hover:scale-110 transition-all duration-1000"/>
+                            <img src={sub.thumbnail} alt={sub.title} className="w-full h-full object-cover opacity-100 brightness-110 group-hover:scale-110 transition-all duration-1000" loading="lazy" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
                             <div className="absolute bottom-0 left-0 p-5 w-full">
                                 <div className="text-[10px] text-yellow-400 font-bold mb-1 flex items-center gap-2">
@@ -245,7 +245,7 @@ export const Home: React.FC<HomeProps> = ({
                    return (
                    <div key={post.id} onClick={() => onNavigate('news-detail', post.id)} className="group cursor-pointer flex flex-col h-full bg-white rounded-xl hover:translate-y-[-5px] transition-all duration-300">
                        <div className="relative overflow-hidden rounded-xl mb-4 h-48 border border-gray-100 shadow-md bg-gray-50">
-                           <img src={post.thumbnail} className="w-full h-full object-cover brightness-110 transform group-hover:scale-110 transition duration-700" alt=""/>
+                           <img src={post.thumbnail} className="w-full h-full object-cover brightness-110 transform group-hover:scale-110 transition duration-700" alt="" loading="lazy" />
                            <div className={`absolute top-3 left-3 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-xl ${badge.color}`}>{badge.text}</div>
                        </div>
                        <h4 className="font-black text-gray-900 text-[16px] leading-[1.4] mb-3 group-hover:text-blue-800 transition line-clamp-3 uppercase tracking-tight">{post.title}</h4>
@@ -272,7 +272,7 @@ export const Home: React.FC<HomeProps> = ({
                        {blockPosts.map(post => (
                            <div key={post.id} onClick={() => onNavigate('news-detail', post.id)} className="flex gap-5 group cursor-pointer hover:bg-slate-50/50 p-3 rounded-xl transition-all border border-transparent">
                                <div className="w-28 h-20 shrink-0 overflow-hidden rounded-lg shadow-md border border-gray-100 bg-gray-50">
-                                  <img src={post.thumbnail} className="w-full h-full object-cover brightness-110 transform group-hover:scale-110 transition duration-700" alt=""/>
+                                  <img src={post.thumbnail} className="w-full h-full object-cover brightness-110 transform group-hover:scale-110 transition duration-700" alt="" loading="lazy" />
                                </div>
                                <div className="flex-1">
                                    <h4 className="text-[15px] font-black text-gray-800 leading-snug mb-2 group-hover:text-teal-800 line-clamp-2 uppercase tracking-tight">{post.title}</h4>

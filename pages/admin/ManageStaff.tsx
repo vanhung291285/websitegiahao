@@ -47,16 +47,61 @@ export const ManageStaff: React.FC<ManageStaffProps> = ({ refreshData }) => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+  // Hàm nén và resize ảnh bằng Canvas
+  const resizeImage = (file: File, maxWidth: number, maxHeight: number, quality: number = 0.8): Promise<string> => {
+    return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = (x) => {
-        if (x.target?.result) {
-          setFormData(prev => ({ ...prev, avatarUrl: x.target!.result as string }));
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Tính toán tỉ lệ khung hình
+          if (width > height) {
+            if (width > maxWidth) {
+              height *= maxWidth / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width *= maxHeight / height;
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+             ctx.drawImage(img, 0, 0, width, height);
+             // Xuất ra base64 jpeg với chất lượng nén
+             resolve(canvas.toDataURL('image/jpeg', quality));
+          } else {
+             resolve(event.target?.result as string);
+          }
+        };
+        img.onerror = () => {
+            resolve(event.target?.result as string);
         }
       };
-      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      // Resize ảnh về tối đa 300x300 để tối ưu tốc độ load
+      try {
+          const resizedBase64 = await resizeImage(file, 300, 300, 0.8);
+          setFormData(prev => ({ ...prev, avatarUrl: resizedBase64 }));
+      } catch (error) {
+          console.error("Lỗi xử lý ảnh:", error);
+          alert("Không thể xử lý ảnh này.");
+      }
     }
   };
 
@@ -226,7 +271,7 @@ export const ManageStaff: React.FC<ManageStaffProps> = ({ refreshData }) => {
                                  <td className="p-4">
                                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 border border-gray-300">
                                        {staff.avatarUrl ? (
-                                          <img src={staff.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                          <img src={staff.avatarUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
                                        ) : (
                                           <div className="w-full h-full flex items-center justify-center text-gray-400"><User size={20}/></div>
                                        )}

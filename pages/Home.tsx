@@ -208,6 +208,9 @@ export const Home: React.FC<HomeProps> = ({
                             <span className="flex items-center gap-2 bg-black/30 px-3 py-1 rounded-lg backdrop-blur-sm border border-white/10">
                                 <Clock size={14} className="text-yellow-400"/> {formatVNTime(mainHero.date)}
                             </span>
+                            <span className="flex items-center gap-2 bg-black/30 px-3 py-1 rounded-lg backdrop-blur-sm border border-white/10">
+                                <Eye size={14} className="text-yellow-400"/> {mainHero.views || 0} lượt xem
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -217,7 +220,11 @@ export const Home: React.FC<HomeProps> = ({
                             <img src={sub.thumbnail} alt={sub.title} className="w-full h-full object-cover opacity-100 brightness-110 group-hover:scale-110 transition-all duration-1000"/>
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
                             <div className="absolute bottom-0 left-0 p-5 w-full">
-                                <div className="text-[10px] text-yellow-400 font-bold mb-1">{formatVNTime(sub.date)}</div>
+                                <div className="text-[10px] text-yellow-400 font-bold mb-1 flex items-center gap-2">
+                                    <span>{formatVNTime(sub.date)}</span>
+                                    <span>•</span>
+                                    <span>{sub.views || 0} xem</span>
+                                </div>
                                 <h3 className="text-white text-[15px] font-black leading-snug group-hover:text-yellow-400 transition-colors drop-shadow-lg line-clamp-3 uppercase">{sub.title}</h3>
                             </div>
                         </div>
@@ -245,6 +252,8 @@ export const Home: React.FC<HomeProps> = ({
                        <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-grow leading-relaxed italic">{post.summary}</p>
                        <div className="text-[10px] text-gray-400 font-bold flex items-center border-t border-gray-50 pt-3 mt-auto uppercase tracking-widest">
                            <Clock size={12} className="mr-2 text-blue-500"/> {formatVNTime(post.date)}
+                           <span className="mx-2 text-gray-300">|</span>
+                           <Eye size={12} className="mr-2 text-blue-500"/> {post.views || 0}
                        </div>
                    </div>
                    );
@@ -267,7 +276,11 @@ export const Home: React.FC<HomeProps> = ({
                                </div>
                                <div className="flex-1">
                                    <h4 className="text-[15px] font-black text-gray-800 leading-snug mb-2 group-hover:text-teal-800 line-clamp-2 uppercase tracking-tight">{post.title}</h4>
-                                   <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center"><Clock size={10} className="mr-1.5"/> {formatVNTime(post.date)}</div>
+                                   <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center">
+                                       <Clock size={10} className="mr-1.5"/> {formatVNTime(post.date)}
+                                       <span className="mx-2">•</span>
+                                       <Eye size={10} className="mr-1.5"/> {post.views || 0}
+                                   </div>
                                </div>
                            </div>
                        ))}

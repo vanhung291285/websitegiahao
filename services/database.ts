@@ -134,7 +134,13 @@ export const DatabaseService = {
 
   // --- POSTS ---
   getPosts: async (): Promise<Post[]> => {
-    const { data } = await supabase.from('posts').select('*').order('date', { ascending: false });
+    // Sắp xếp ưu tiên: Ngày đăng (mới nhất) -> Ngày tạo (mới nhất)
+    const { data } = await supabase
+        .from('posts')
+        .select('*')
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
+        
     return (data || []).map((p: any) => ({ 
         ...p, 
         blockIds: p.block_ids || [], 

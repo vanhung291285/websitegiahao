@@ -5,7 +5,7 @@ import { DatabaseService } from '../../services/database';
 import { generateSchoolContent } from '../../services/geminiService';
 import { 
   Plus, Edit, Trash2, Search, Save, Loader2, Image, Bold, Italic, List, Type, 
-  RotateCcw, UploadCloud, Check, Link as LinkIcon, Paperclip, FileText, X, AlertCircle, Youtube
+  RotateCcw, UploadCloud, Check, Link as LinkIcon, Paperclip, FileText, X, AlertCircle, Youtube, Clock
 } from 'lucide-react';
 
 interface ManageNewsProps {
@@ -27,6 +27,30 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
+  // Helper: Chuyển đổi chuỗi ISO (UTC) sang định dạng YYYY-MM-DDTHH:mm:ss theo giờ địa phương máy tính
+  // Lấy đủ 19 ký tự để giữ lại giây
+  const toLocalInputFormat = (isoString?: string) => {
+    const date = isoString ? new Date(isoString) : new Date();
+    // Lấy offset của máy tính (phút) và đổi dấu để điều chỉnh về giờ địa phương
+    const offsetMs = date.getTimezoneOffset() * 60000; 
+    const localDate = new Date(date.getTime() - offsetMs);
+    // Slice(0, 19) để lấy YYYY-MM-DDTHH:mm:ss
+    return localDate.toISOString().slice(0, 19);
+  };
+
+  // Helper: Hiển thị ngày giờ đầy đủ cho người dùng Việt Nam
+  const formatFullDateTime = (isoString: string) => {
+    try {
+        return new Date(isoString).toLocaleString('vi-VN', {
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour12: false
+        });
+    } catch (e) {
+        return isoString;
+    }
+  };
+
   const handleEdit = (post: Post) => {
     setCurrentPost({ ...post, blockIds: post.blockIds || [], attachments: post.attachments || [] });
     setTagsInput(post.tags ? post.tags.join(', ') : '');
@@ -34,6 +58,9 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
   };
 
   const handleCreate = () => {
+    // Lấy thời gian hiện tại của hệ thống máy tính
+    const now = new Date().toISOString();
+    
     setCurrentPost({
       title: '',
       slug: '',
@@ -50,11 +77,15 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
       blockIds: [],
       attachments: [],
       tags: [],
-      // SỬA: Lấy toàn bộ timestamp để sắp xếp chính xác theo giây
-      date: new Date().toISOString() 
+      date: now // Gán ngay thời gian hiện tại
     });
     setTagsInput('');
     setIsEditing(true);
+  };
+
+  const setDateToNow = () => {
+      const now = new Date().toISOString();
+      setCurrentPost(prev => ({ ...prev, date: now }));
   };
 
   const generateSlug = () => {
@@ -79,34 +110,6 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
       };
       reader.readAsDataURL(file);
     }
-  };
-
-  const handleAddLinkAttachment = () => {
-      if (!attachName || !attachUrl) return alert("Vui lòng nhập tên và đường dẫn file.");
-      const newAtt: Attachment = { id: `att_${Date.now()}`, name: attachName, url: attachUrl, type: 'link', fileType: 'link' };
-      setCurrentPost(prev => ({ ...prev, attachments: [...(prev.attachments || []), newAtt] }));
-      setAttachName('');
-      setAttachUrl('');
-  };
-
-  const handleUploadFileAttachment = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files[0]) {
-          const file = e.target.files[0];
-          const reader = new FileReader();
-          reader.onload = (x) => {
-              if (x.target?.result) {
-                  const extension = file.name.split('.').pop()?.toLowerCase() || 'file';
-                  const newAtt: Attachment = { id: `att_${Date.now()}`, name: file.name, url: x.target!.result as string, type: 'file', fileType: extension };
-                  setCurrentPost(prev => ({ ...prev, attachments: [...(prev.attachments || []), newAtt] }));
-              }
-          };
-          reader.readAsDataURL(file);
-          e.target.value = '';
-      }
-  };
-
-  const removeAttachment = (id: string) => {
-      setCurrentPost(prev => ({ ...prev, attachments: prev.attachments?.filter(a => a.id !== id) || [] }));
   };
 
   const insertTag = (startTag: string, endTag: string = '') => {
@@ -180,14 +183,20 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
     if (currentPost.title && currentPost.content) {
       const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t !== '');
       try {
-        // Đảm bảo bài viết mới luôn lấy thời gian mới nhất lúc nhấn "Lưu"
+        let finalDate = currentPost.date;
+        
+        // Nếu bài viết mới (không có ID), ép buộc dùng thời gian hiện tại để có giây chính xác
+        if (!currentPost.id) {
+            finalDate = new Date().toISOString();
+        }
+
         const finalData = {
             ...currentPost,
             tags: tags,
             slug: currentPost.slug || 'no-slug',
             attachments: currentPost.attachments || [],
-            // Nếu là bài mới thì cập nhật date thành NOW
-            date: currentPost.id ? currentPost.date : new Date().toISOString()
+            date: finalDate,
+            isFeatured: currentPost.isFeatured, 
         };
         
         await DatabaseService.savePost(finalData as Post);
@@ -240,6 +249,28 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
                       <label className="col-span-12 md:col-span-2 font-bold text-gray-700">Hình minh họa:</label>
                       <div className="col-span-12 md:col-span-10 flex gap-2"><input type="text" className="flex-1 border border-gray-300 p-2 rounded bg-white text-gray-900 outline-none" value={currentPost.thumbnail} onChange={e => setCurrentPost({...currentPost, thumbnail: e.target.value})} placeholder="https://..."/><label className="bg-cyan-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-cyan-600 text-xs font-bold flex items-center shadow-sm"><UploadCloud size={16} className="mr-1"/> Chọn ảnh<input type="file" className="hidden" onChange={handleImageUpload}/></label></div>
                   </div>
+                  
+                  {/* CẬP NHẬT: Input Datetime-local với step="1" để chỉnh giây */}
+                  <div className="grid grid-cols-12 gap-4 mb-4 items-center">
+                      <label className="col-span-12 md:col-span-2 font-bold text-gray-700">Ngày đăng:</label>
+                      <div className="col-span-12 md:col-span-10 flex items-center gap-3">
+                          <input 
+                            type="datetime-local" 
+                            step="1"
+                            className="border border-gray-300 p-2 rounded bg-white text-gray-900 font-bold" 
+                            value={toLocalInputFormat(currentPost.date)}
+                            onChange={e => setCurrentPost({...currentPost, date: new Date(e.target.value).toISOString()})}
+                          />
+                          <button 
+                            onClick={setDateToNow}
+                            className="flex items-center gap-1 bg-green-50 text-green-700 px-3 py-2 rounded border border-green-200 hover:bg-green-100 text-xs font-bold transition"
+                            title="Cập nhật lại thời gian đăng thành thời điểm hiện tại"
+                          >
+                             <Clock size={14} /> Lấy giờ hiện tại
+                          </button>
+                      </div>
+                  </div>
+
                   <div className="mb-2"><label className="block font-bold text-gray-700 mb-2">Giới thiệu ngắn gọn</label><textarea rows={3} className="w-full border border-gray-300 p-3 rounded bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 outline-none" value={currentPost.summary} onChange={e => setCurrentPost({...currentPost, summary: e.target.value})}></textarea></div>
                </div>
 
@@ -259,7 +290,6 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
                   </div>
                </div>
 
-               {/* FIX: TÙY CHỌN HIỂN THỊ GIỐNG HÌNH GỐC */}
                <div className="bg-white border border-gray-200 rounded p-5 shadow-sm">
                   <h4 className="font-bold text-gray-800 mb-4 text-[13px] uppercase border-b pb-2 tracking-tight">TÙY CHỌN HIỂN THỊ:</h4>
                   <div className="space-y-3">
@@ -274,7 +304,6 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
                   </div>
                </div>
 
-               {/* FIX: TAG BÀI VIẾT GIỐNG HÌNH GỐC */}
                <div className="bg-white border border-gray-200 rounded p-5 shadow-sm">
                   <h4 className="font-bold text-gray-800 mb-4 text-[13px] uppercase border-b pb-2 tracking-tight">TAG BÀI VIẾT:</h4>
                   <input 
@@ -292,7 +321,10 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
     );
   }
 
-  const filteredPosts = posts.filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Sắp xếp danh sách bài viết trong admin theo thời gian mới nhất (DESC)
+  const filteredPosts = posts
+    .filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div>
@@ -303,16 +335,17 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex items-center space-x-4 bg-gray-50"><div className="relative flex-1 max-w-md"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /><input type="text" placeholder="Tìm kiếm..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div></div>
         <table className="w-full text-left">
-            <thead><tr className="bg-gray-100 text-gray-700 text-sm font-bold uppercase"><th className="px-6 py-4">Trạng thái</th><th className="px-6 py-4">Tiêu đề</th><th className="px-6 py-4">Chuyên mục</th><th className="px-6 py-4">Ngày</th><th className="px-6 py-4 text-right">Hành động</th></tr></thead>
+            <thead><tr className="bg-gray-100 text-gray-700 text-sm font-bold uppercase"><th className="px-6 py-4">Trạng thái</th><th className="px-6 py-4">Tiêu đề</th><th className="px-6 py-4">Chuyên mục</th><th className="px-6 py-4">Ngày đăng (Giờ hệ thống)</th><th className="px-6 py-4 text-right">Hành động</th></tr></thead>
             <tbody className="divide-y divide-gray-100">
               {filteredPosts.map(post => {
                   const cat = categories.find(c => c.slug === post.category);
+                  const dateStr = formatFullDateTime(post.date);
                   return (
                   <tr key={post.id} className="hover:bg-blue-50 transition">
                     <td className="px-6 py-4">{post.status === 'published' ? <span className="text-green-700 text-xs font-bold bg-green-100 px-2 py-1 rounded">Hiện</span> : <span className="text-gray-600 text-xs font-bold bg-gray-200 px-2 py-1 rounded">Nháp</span>}</td>
                     <td className="px-6 py-4 font-bold text-gray-800">{post.title}</td>
                     <td className="px-6 py-4 text-sm font-medium">{cat?.name || post.category}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{new Date(post.date).toLocaleDateString('vi-VN')}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 font-mono">{dateStr}</td>
                     <td className="px-6 py-4 text-right space-x-2"><button onClick={() => handleEdit(post)} className="text-blue-600 hover:text-blue-800 p-1"><Edit size={18} /></button><button onClick={() => handleDelete(post.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={18} /></button></td>
                   </tr>
               )})}

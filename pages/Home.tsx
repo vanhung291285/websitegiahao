@@ -48,19 +48,23 @@ export const Home: React.FC<HomeProps> = ({
     let filtered = posts.filter(p => p.status === 'published');
     const source = block.htmlContent || 'all'; 
 
-    if (source === 'featured') {
-        filtered = filtered.filter(p => p.isFeatured);
+    // QUAN TRỌNG: Với khối 'Hero' hoặc nếu source='featured', ta KHÔNG LỌC THEO CỜ ISFEATURED NỮA
+    // mà sẽ lấy tất cả bài viết và sắp xếp theo thời gian mới nhất.
+    // Điều này đảm bảo "bất kì bài viết đưa lên cũng là tin tiêu điểm" nếu nó mới nhất.
+    if (source === 'featured' || block.type === 'hero') {
+        // filtered = filtered.filter(p => p.isFeatured); // Đã bỏ dòng này để ưu tiên thời gian
     } 
     else if (source !== 'all') {
         filtered = filtered.filter(p => p.category === source);
     }
     
-    // Sắp xếp bài mới nhất lên trên cùng dựa vào thời gian (date)
+    // Sắp xếp bài mới nhất lên trên cùng dựa vào thời gian (date) chính xác từng mili giây
     return filtered
       .sort((a, b) => {
-          const tA = new Date(a.date || 0).getTime();
-          const tB = new Date(b.date || 0).getTime();
-          return (isNaN(tB) ? 0 : tB) - (isNaN(tA) ? 0 : tA);
+          // So sánh chuỗi ISO trực tiếp sẽ chính xác và nhanh hơn
+          if (b.date > a.date) return 1;
+          if (b.date < a.date) return -1;
+          return 0;
       })
       .slice(0, block.itemCount || 5);
   };
@@ -187,7 +191,8 @@ export const Home: React.FC<HomeProps> = ({
     }
 
     if (block.type === 'hero') {
-        const mainHero = blockPosts[0];
+        // Lấy tin đầu tiên từ danh sách đã sắp xếp (tin mới nhất)
+        const mainHero = blockPosts[0]; 
         const subHeros = blockPosts.slice(1, 3);
         if (!mainHero) return null;
         return (

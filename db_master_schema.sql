@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS categories (
 );
 
 -- 3. Bảng Bài viết
+-- CẬP NHẬT: date chuyển sang TIMESTAMPTZ để lưu giờ phút
 CREATE TABLE IF NOT EXISTS posts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title TEXT NOT NULL,
@@ -61,7 +62,7 @@ CREATE TABLE IF NOT EXISTS posts (
   thumbnail TEXT,
   image_caption TEXT,
   author TEXT,
-  date DATE DEFAULT CURRENT_DATE,
+  date TIMESTAMPTZ DEFAULT NOW(), 
   category TEXT, -- Slug của category
   views INTEGER DEFAULT 0,
   status TEXT DEFAULT 'published',

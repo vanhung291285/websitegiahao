@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { DisplayBlock, PostCategory } from '../../types';
 import { DatabaseService } from '../../services/database';
@@ -300,6 +301,7 @@ export const ManageBlocks: React.FC = () => {
                  <option value="video">Video</option>
                  <option value="docs">Văn bản</option>
                  <option value="stats">Thống kê</option>
+                 <option value="staff">Nhân sự</option>
                </select>
             </div>
             <div className="flex items-end">

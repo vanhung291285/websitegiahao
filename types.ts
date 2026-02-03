@@ -1,4 +1,5 @@
 
+
 export enum UserRole {
   ADMIN = 'ADMIN',   // Quản trị viên cao cấp
   EDITOR = 'EDITOR', // Biên tập viên
@@ -53,7 +54,7 @@ export interface DisplayBlock {
   id: string;
   name: string;
   position: 'main' | 'sidebar';
-  type: 'hero' | 'grid' | 'list' | 'highlight' | 'docs' | 'html' | 'stats' | 'video'; 
+  type: 'hero' | 'grid' | 'list' | 'highlight' | 'docs' | 'html' | 'stats' | 'video' | 'staff'; 
   order: number;
   itemCount: number;
   isVisible: boolean;

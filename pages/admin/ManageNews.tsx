@@ -50,7 +50,8 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
       blockIds: [],
       attachments: [],
       tags: [],
-      date: new Date().toISOString().split('T')[0]
+      // SỬA: Lấy toàn bộ timestamp để sắp xếp chính xác theo giây
+      date: new Date().toISOString() 
     });
     setTagsInput('');
     setIsEditing(true);
@@ -179,12 +180,17 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
     if (currentPost.title && currentPost.content) {
       const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t !== '');
       try {
-        await DatabaseService.savePost({
+        // Đảm bảo bài viết mới luôn lấy thời gian mới nhất lúc nhấn "Lưu"
+        const finalData = {
             ...currentPost,
             tags: tags,
             slug: currentPost.slug || 'no-slug',
-            attachments: currentPost.attachments || []
-        } as Post);
+            attachments: currentPost.attachments || [],
+            // Nếu là bài mới thì cập nhật date thành NOW
+            date: currentPost.id ? currentPost.date : new Date().toISOString()
+        };
+        
+        await DatabaseService.savePost(finalData as Post);
         refreshData();
         setIsEditing(false);
       } catch (e: any) { alert(`Lỗi: ${e.message || JSON.stringify(e)}`); }
@@ -306,7 +312,7 @@ export const ManageNews: React.FC<ManageNewsProps> = ({ posts, categories, refre
                     <td className="px-6 py-4">{post.status === 'published' ? <span className="text-green-700 text-xs font-bold bg-green-100 px-2 py-1 rounded">Hiện</span> : <span className="text-gray-600 text-xs font-bold bg-gray-200 px-2 py-1 rounded">Nháp</span>}</td>
                     <td className="px-6 py-4 font-bold text-gray-800">{post.title}</td>
                     <td className="px-6 py-4 text-sm font-medium">{cat?.name || post.category}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{post.date}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{new Date(post.date).toLocaleDateString('vi-VN')}</td>
                     <td className="px-6 py-4 text-right space-x-2"><button onClick={() => handleEdit(post)} className="text-blue-600 hover:text-blue-800 p-1"><Edit size={18} /></button><button onClick={() => handleDelete(post.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={18} /></button></td>
                   </tr>
               )})}

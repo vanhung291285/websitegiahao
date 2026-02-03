@@ -31,7 +31,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({ post, onClick }) => {
         <img 
           src={post.thumbnail} 
           alt={post.title} 
-          className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover brightness-110 transform hover:scale-105 transition-transform duration-500"
         />
         <div className="absolute top-2 left-2">
           <span className={`px-2 py-1 text-[10px] font-bold text-white rounded uppercase shadow-sm ${badge.color}`}>

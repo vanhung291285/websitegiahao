@@ -132,7 +132,8 @@ export const DatabaseService = {
        slogan: data.slogan, 
        logoUrl: data.logo_url, 
        faviconUrl: data.favicon_url,
-       bannerUrl: data.banner_url, 
+       bannerUrl: data.banner_url,
+       bannerHeight: data.banner_height || 400,
        principalName: data.principal_name, 
        address: data.address,
        phone: data.phone, 
@@ -163,6 +164,7 @@ export const DatabaseService = {
        logo_url: config.logoUrl, 
        favicon_url: config.faviconUrl,
        banner_url: config.bannerUrl, 
+       banner_height: config.bannerHeight || 400, // Đảm bảo luôn có giá trị số
        principal_name: config.principalName, 
        address: config.address,
        phone: config.phone, 
@@ -183,8 +185,16 @@ export const DatabaseService = {
        meta_description: config.metaDescription, 
        footer_links: config.footerLinks
     };
-    if (current && current.length > 0) return supabase.from('school_config').update(dbData).eq('id', current[0].id);
-    return supabase.from('school_config').insert(dbData);
+    
+    let result;
+    if (current && current.length > 0) {
+      result = await supabase.from('school_config').update(dbData).eq('id', current[0].id);
+    } else {
+      result = await supabase.from('school_config').insert(dbData);
+    }
+
+    if (result.error) throw result.error;
+    return result;
   },
 
   // --- SHARED CATEGORIES ---

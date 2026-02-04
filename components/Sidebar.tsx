@@ -12,7 +12,8 @@ import {
   Play, 
   FolderOpen, 
   FileText,
-  CircleArrowRight
+  CircleArrowRight,
+  Eye
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -36,13 +37,12 @@ const StatsBlock: React.FC<{ block: DisplayBlock }> = ({ block }) => {
       };
       
       fetchStats();
-      const statsTimer = setInterval(fetchStats, 20000); // Cập nhật sau mỗi 20s
+      const statsTimer = setInterval(fetchStats, 20000); 
       return () => clearInterval(statsTimer);
    }, []);
 
    return (
       <div className="bg-white shadow-sm border border-gray-200 rounded-sm overflow-hidden mb-8">
-         {/* HEADER MÀU XANH LÁ - THEO HÌNH GỐC */}
          <div className="bg-[#2e7d32] p-2.5 px-4 text-white flex items-center gap-2">
             <CircleArrowRight size={20} className="stroke-[3]" />
             <h3 className="font-bold uppercase text-[15px] tracking-tight">
@@ -52,7 +52,6 @@ const StatsBlock: React.FC<{ block: DisplayBlock }> = ({ block }) => {
          
          <div className="p-0">
             <ul className="divide-y divide-gray-100">
-               {/* 1. Đang truy cập */}
                <li className="flex justify-between items-center p-3.5 px-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center gap-3 text-gray-800">
                      <Zap size={19} className="text-gray-700 fill-gray-700 stroke-[1.5]" />
@@ -62,8 +61,6 @@ const StatsBlock: React.FC<{ block: DisplayBlock }> = ({ block }) => {
                      {stats.online.toLocaleString()}
                   </span>
                </li>
-
-               {/* 2. Hôm nay */}
                <li className="flex justify-between items-center p-3.5 px-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center gap-3 text-gray-800">
                      <Filter size={19} className="text-gray-700 fill-gray-700 stroke-[1.5]" />
@@ -73,8 +70,6 @@ const StatsBlock: React.FC<{ block: DisplayBlock }> = ({ block }) => {
                      {stats.today.toLocaleString()}
                   </span>
                </li>
-
-               {/* 3. Tháng hiện tại */}
                <li className="flex justify-between items-center p-3.5 px-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center gap-3 text-gray-800">
                      <Calendar size={19} className="text-gray-700 stroke-[2.5]" />
@@ -84,8 +79,6 @@ const StatsBlock: React.FC<{ block: DisplayBlock }> = ({ block }) => {
                      {stats.month.toLocaleString()}
                   </span>
                </li>
-
-               {/* 4. Tổng lượt truy cập */}
                <li className="flex justify-between items-center p-3.5 px-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center gap-3 text-gray-800">
                      <MenuIcon size={19} className="text-gray-700 stroke-[3]" />
@@ -194,6 +187,15 @@ const VideoBlock: React.FC<{ block: DisplayBlock, videos: Video[] }> = ({ block,
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ blocks, posts, postCategories, docCategories, documents, onNavigate, currentPage, videos = [] }) => {
+  
+  const formatDateOnly = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('vi-VN', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    } catch (e) { return dateStr; }
+  };
+
   const getPostsForBlock = (block: DisplayBlock) => {
     let filtered = posts.filter(p => p.status === 'published');
     const source = block.htmlContent || 'all'; 
@@ -251,7 +253,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ blocks, posts, postCategories,
                             <h4 className="text-[13px] text-[#1e3a8a] font-black group-hover:text-red-700 leading-tight uppercase line-clamp-3">
                                 {post.title}
                             </h4>
-                            <div className="mt-1 text-[9px] text-gray-400 font-bold tracking-widest uppercase">{post.date}</div>
+                            <div className="mt-1 flex items-center gap-3 text-[9px] text-gray-400 font-bold tracking-widest uppercase">
+                                <span className="flex items-center gap-1"><Calendar size={10}/> {formatDateOnly(post.date)}</span>
+                                <span className="flex items-center gap-1"><Eye size={10}/> {post.views} xem</span>
+                            </div>
                         </div>
                      </div>
                   </li>

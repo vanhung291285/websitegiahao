@@ -32,13 +32,11 @@ export const Home: React.FC<HomeProps> = ({
     onNavigate 
 }) => {
   
-  // Hàm định dạng ngày giờ Việt Nam
+  // CẬP NHẬT: Chỉ hiển thị ngày, không hiển thị giờ
   const formatVNTime = (dateStr: string) => {
     try {
       const d = new Date(dateStr);
-      const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-      const date = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      return `${time} ${date}`;
+      return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
     } catch (e) {
       return dateStr;
     }
@@ -48,20 +46,15 @@ export const Home: React.FC<HomeProps> = ({
     let filtered = posts.filter(p => p.status === 'published');
     const source = block.htmlContent || 'all'; 
 
-    // QUAN TRỌNG: Với khối 'Hero' hoặc nếu source='featured', ta KHÔNG LỌC THEO CỜ ISFEATURED NỮA
-    // mà sẽ lấy tất cả bài viết và sắp xếp theo thời gian mới nhất.
-    // Điều này đảm bảo "bất kì bài viết đưa lên cũng là tin tiêu điểm" nếu nó mới nhất.
     if (source === 'featured' || block.type === 'hero') {
-        // filtered = filtered.filter(p => p.isFeatured); // Đã bỏ dòng này để ưu tiên thời gian
+        // Lấy tất cả và sắp xếp theo ngày mới nhất
     } 
     else if (source !== 'all') {
         filtered = filtered.filter(p => p.category === source);
     }
     
-    // Sắp xếp bài mới nhất lên trên cùng dựa vào thời gian (date) chính xác từng mili giây
     return filtered
       .sort((a, b) => {
-          // So sánh chuỗi ISO trực tiếp sẽ chính xác và nhanh hơn
           if (b.date > a.date) return 1;
           if (b.date < a.date) return -1;
           return 0;
@@ -191,7 +184,6 @@ export const Home: React.FC<HomeProps> = ({
     }
 
     if (block.type === 'hero') {
-        // Lấy tin đầu tiên từ danh sách đã sắp xếp (tin mới nhất)
         const mainHero = blockPosts[0]; 
         const subHeros = blockPosts.slice(1, 3);
         if (!mainHero) return null;
@@ -211,7 +203,7 @@ export const Home: React.FC<HomeProps> = ({
                         <p className="text-gray-200 text-[15px] line-clamp-2 mb-5 opacity-100 max-w-3xl font-medium leading-relaxed drop-shadow-md">{mainHero.summary}</p>
                         <div className="flex items-center text-gray-300 text-[12px] gap-4 font-bold uppercase tracking-widest">
                             <span className="flex items-center gap-2 bg-black/30 px-3 py-1 rounded-lg backdrop-blur-sm border border-white/10">
-                                <Clock size={14} className="text-yellow-400"/> {formatVNTime(mainHero.date)}
+                                <Calendar size={14} className="text-yellow-400"/> {formatVNTime(mainHero.date)}
                             </span>
                             <span className="flex items-center gap-2 bg-black/30 px-3 py-1 rounded-lg backdrop-blur-sm border border-white/10">
                                 <Eye size={14} className="text-yellow-400"/> {mainHero.views || 0} lượt xem
@@ -256,9 +248,9 @@ export const Home: React.FC<HomeProps> = ({
                        <h4 className="font-black text-gray-900 text-[16px] leading-[1.4] mb-3 group-hover:text-blue-800 transition line-clamp-3 uppercase tracking-tight">{post.title}</h4>
                        <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-grow leading-relaxed italic">{post.summary}</p>
                        <div className="text-[10px] text-gray-400 font-bold flex items-center border-t border-gray-50 pt-3 mt-auto uppercase tracking-widest">
-                           <Clock size={12} className="mr-2 text-blue-500"/> {formatVNTime(post.date)}
+                           <Calendar size={12} className="mr-2 text-blue-500"/> {formatVNTime(post.date)}
                            <span className="mx-2 text-gray-300">|</span>
-                           <Eye size={12} className="mr-2 text-blue-500"/> {post.views || 0}
+                           <Eye size={12} className="mr-2 text-blue-500"/> {post.views || 0} lượt xem
                        </div>
                    </div>
                    );
@@ -282,9 +274,9 @@ export const Home: React.FC<HomeProps> = ({
                                <div className="flex-1">
                                    <h4 className="text-[15px] font-black text-gray-800 leading-snug mb-2 group-hover:text-teal-800 line-clamp-2 uppercase tracking-tight">{post.title}</h4>
                                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center">
-                                       <Clock size={10} className="mr-1.5"/> {formatVNTime(post.date)}
+                                       <Calendar size={10} className="mr-1.5"/> {formatVNTime(post.date)}
                                        <span className="mx-2">•</span>
-                                       <Eye size={10} className="mr-1.5"/> {post.views || 0}
+                                       <Eye size={10} className="mr-1.5"/> {post.views || 0} lượt xem
                                    </div>
                                </div>
                            </div>

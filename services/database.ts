@@ -281,7 +281,8 @@ export const DatabaseService = {
 
   // --- DOCUMENTS ---
   getDocuments: async (): Promise<SchoolDocument[]> => {
-    const { data } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
+    // SẮP XẾP THEO NGÀY BAN HÀNH (date) GIẢM DẦN (MỚI NHẤT LÊN ĐẦU)
+    const { data } = await supabase.from('documents').select('*').order('date', { ascending: false });
     return (data || []).map((d: any) => ({ id: d.id, number: d.number, title: d.title, date: d.date, categoryId: d.category_id, downloadUrl: d.download_url }));
   },
   saveDocument: async (doc: SchoolDocument) => {

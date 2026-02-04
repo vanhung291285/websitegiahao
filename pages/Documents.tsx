@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { SchoolDocument, DocumentCategory } from '../types';
-import { FileText, Download, Search, Filter, FolderOpen, Eye, X, Maximize2 } from 'lucide-react';
+import { FileText, Download, Search, FolderOpen, Eye, X, Maximize2 } from 'lucide-react';
 
 interface DocumentsProps {
   documents: SchoolDocument[];
@@ -21,12 +21,42 @@ export const Documents: React.FC<DocumentsProps> = ({ documents, categories, ini
 
   const activeCategory = categories.find(c => c.slug === activeCategorySlug);
   
-  // Filter Docs and Sort by Date Descending
+  // Helper: Chuyển đổi chuỗi ngày thành số để so sánh (Hỗ trợ cả YYYY-MM-DD và DD/MM/YYYY)
+  const parseDateValue = (dateStr: string) => {
+    if (!dateStr) return 0;
+    // Kiểm tra định dạng YYYY-MM-DD (ISO)
+    if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
+        return new Date(dateStr).getTime();
+    }
+    // Kiểm tra định dạng DD/MM/YYYY (Việt Nam)
+    if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}/)) {
+        const [d, m, y] = dateStr.split('/');
+        return new Date(parseInt(y), parseInt(m) - 1, parseInt(d)).getTime();
+    }
+    // Fallback
+    return new Date(dateStr).getTime();
+  };
+
+  const formatVNDate = (dateStr: string) => {
+    try {
+      // Nếu đã là định dạng VN thì giữ nguyên
+      if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}/)) return dateStr;
+      
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+
+      return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) {
+      return dateStr;
+    }
+  };
+  
+  // Filter Docs and Sort by Date Descending (Mới nhất lên đầu)
   const filteredDocs = documents.filter(doc => {
       const matchCat = activeCategory ? doc.categoryId === activeCategory.id : true;
       const matchSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || doc.number.toLowerCase().includes(searchTerm.toLowerCase());
       return matchCat && matchSearch;
-  }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }).sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date));
 
   const handlePreview = (doc: SchoolDocument) => {
     if (!doc.downloadUrl || doc.downloadUrl === '#') {
@@ -34,15 +64,6 @@ export const Documents: React.FC<DocumentsProps> = ({ documents, categories, ini
         return;
     }
     setPreviewDoc(doc);
-  };
-
-  const formatVNDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    } catch (e) {
-      return dateStr;
-    }
   };
 
   return (
@@ -94,12 +115,11 @@ export const Documents: React.FC<DocumentsProps> = ({ documents, categories, ini
                             </thead>
                             <tbody className="divide-y divide-gray-100 text-sm">
                                 {filteredDocs.map((doc, index) => {
-                                    const isImage = doc.downloadUrl && doc.downloadUrl.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) || doc.downloadUrl.startsWith('data:image');
                                     return (
                                         <tr key={doc.id} className={index % 2 === 0 ? 'bg-white hover:bg-blue-50' : 'bg-gray-50 hover:bg-blue-50'}>
-                                            <td className="px-6 py-4 font-mono text-blue-800 font-medium border-r">{doc.number}</td>
-                                            <td className="px-6 py-4 border-r text-gray-600">{formatVNDate(doc.date)}</td>
-                                            <td className="px-6 py-4 border-r text-gray-800 font-medium">
+                                            <td className="px-6 py-4 font-mono text-blue-800 font-medium border-r whitespace-nowrap">{doc.number}</td>
+                                            <td className="px-6 py-4 border-r text-gray-600 whitespace-nowrap font-mono">{formatVNDate(doc.date)}</td>
+                                            <td className="px-6 py-4 border-r text-gray-800 font-medium leading-relaxed">
                                                 <div 
                                                     className="cursor-pointer hover:text-blue-600 transition"
                                                     onClick={() => handlePreview(doc)}

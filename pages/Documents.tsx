@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SchoolDocument, DocumentCategory } from '../types';
 import { FileText, Download, Search, Filter, FolderOpen, Eye, X, Maximize2 } from 'lucide-react';
@@ -20,12 +21,12 @@ export const Documents: React.FC<DocumentsProps> = ({ documents, categories, ini
 
   const activeCategory = categories.find(c => c.slug === activeCategorySlug);
   
-  // Filter Docs
+  // Filter Docs and Sort by Date Descending
   const filteredDocs = documents.filter(doc => {
       const matchCat = activeCategory ? doc.categoryId === activeCategory.id : true;
       const matchSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || doc.number.toLowerCase().includes(searchTerm.toLowerCase());
       return matchCat && matchSearch;
-  });
+  }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handlePreview = (doc: SchoolDocument) => {
     if (!doc.downloadUrl || doc.downloadUrl === '#') {
@@ -33,6 +34,15 @@ export const Documents: React.FC<DocumentsProps> = ({ documents, categories, ini
         return;
     }
     setPreviewDoc(doc);
+  };
+
+  const formatVNDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) {
+      return dateStr;
+    }
   };
 
   return (
@@ -88,7 +98,7 @@ export const Documents: React.FC<DocumentsProps> = ({ documents, categories, ini
                                     return (
                                         <tr key={doc.id} className={index % 2 === 0 ? 'bg-white hover:bg-blue-50' : 'bg-gray-50 hover:bg-blue-50'}>
                                             <td className="px-6 py-4 font-mono text-blue-800 font-medium border-r">{doc.number}</td>
-                                            <td className="px-6 py-4 border-r text-gray-600">{doc.date}</td>
+                                            <td className="px-6 py-4 border-r text-gray-600">{formatVNDate(doc.date)}</td>
                                             <td className="px-6 py-4 border-r text-gray-800 font-medium">
                                                 <div 
                                                     className="cursor-pointer hover:text-blue-600 transition"

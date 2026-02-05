@@ -255,7 +255,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ blocks, posts, postCategories,
                             </h4>
                             <div className="mt-1 flex items-center gap-3 text-[9px] text-gray-400 font-bold tracking-widest uppercase">
                                 <span className="flex items-center gap-1"><Calendar size={10}/> {formatDateOnly(post.date)}</span>
-                                <span className="flex items-center gap-1"><Eye size={10}/> {post.views} xem</span>
                             </div>
                         </div>
                      </div>

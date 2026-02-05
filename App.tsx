@@ -361,7 +361,6 @@ const App: React.FC = () => {
                     <p className="text-gray-700 text-sm line-clamp-2 mb-2 flex-grow">{post.summary}</p>
                     <div className="text-xs text-gray-400 mt-auto pt-2 border-t border-gray-100 flex items-center gap-4">
                         <span className="flex items-center gap-1"><Calendar size={12}/> {formatDateOnly(post.date)}</span>
-                        <span className="flex items-center gap-1"><Eye size={12}/> {post.views} lượt xem</span>
                     </div>
                     </div>
                 )})}
@@ -388,8 +387,6 @@ const App: React.FC = () => {
                                 <span className={`font-bold text-${cat?.color || 'blue'}-700`}>{(cat?.name || post.category).toUpperCase()}</span>
                                 <span>|</span>
                                 <span className="flex items-center gap-1 font-medium"><Calendar size={14} className="text-blue-600"/> {formatDateOnly(post.date)}</span>
-                                <span>|</span>
-                                <span className="flex items-center gap-1 font-medium"><Eye size={14} className="text-blue-600"/> {post.views} lượt xem</span>
                                 <span>|</span>
                                 <span className="italic">Tác giả: {post.author}</span>
                               </div>

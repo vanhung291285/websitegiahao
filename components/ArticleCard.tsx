@@ -53,10 +53,6 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({ post, onClick }) => {
             <Calendar size={14} />
             <span>{post.date}</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <Eye size={14} />
-            <span>{post.views}</span>
-          </div>
         </div>
       </div>
     </div>

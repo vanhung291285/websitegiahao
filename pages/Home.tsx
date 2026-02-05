@@ -53,13 +53,23 @@ export const Home: React.FC<HomeProps> = ({
         filtered = filtered.filter(p => p.category === source);
     }
     
-    return filtered
-      .sort((a, b) => {
+    // Sắp xếp
+    const sorted = filtered.sort((a, b) => {
           if (b.date > a.date) return 1;
           if (b.date < a.date) return -1;
           return 0;
-      })
-      .slice(0, block.itemCount || 5);
+      });
+
+    // Xác định số lượng bài viết cần lấy
+    let limit = block.itemCount || 5;
+    
+    // Nếu là khối Hero, lấy 1 tin chính + số lượng tin phụ từ cấu hình (mặc định 7 nếu không cấu hình)
+    if (block.type === 'hero') {
+        const sideCount = config.homeNewsCount > 0 ? config.homeNewsCount : 7;
+        limit = 1 + sideCount; 
+    }
+
+    return sorted.slice(0, limit);
   };
 
   const getCategoryBadge = (catSlug: string) => {
@@ -88,7 +98,7 @@ export const Home: React.FC<HomeProps> = ({
     const textColor = block.customTextColor || '#1e3a8a';
 
     const BlockHeader = () => (
-        <div className="flex flex-col mb-8">
+        <div className="flex flex-col mb-6">
             <div className="flex justify-between items-center pb-2">
                 <div className="flex items-center">
                     <div className="w-1.5 h-7 mr-3.5 rounded-sm" style={{ backgroundColor: accentColor }}></div>
@@ -185,42 +195,76 @@ export const Home: React.FC<HomeProps> = ({
 
     if (block.type === 'hero') {
         const mainHero = blockPosts[0]; 
-        const subHeros = blockPosts.slice(1, 3);
+        const subHeros = blockPosts.slice(1); // Lấy phần còn lại
+        
         if (!mainHero) return null;
+
         return (
-          <section key={block.id} className="mb-10">
-             <div className="grid grid-cols-1 md:grid-cols-12 gap-2 rounded-2xl overflow-hidden shadow-xl border border-gray-100">
-                <div className="md:col-span-8 relative h-[400px] md:h-[520px] group cursor-pointer overflow-hidden bg-gray-900" onClick={() => onNavigate('news-detail', mainHero.id)}>
-                    <img src={mainHero.thumbnail} alt={mainHero.title} className="w-full h-full object-cover opacity-100 brightness-110 group-hover:scale-105 transition-all duration-1000"/>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 p-6 md:p-10 w-full">
-                        <span className={`text-white text-[11px] font-black px-4 py-1.5 uppercase rounded-full mb-5 inline-block shadow-lg ${getCategoryBadge(mainHero.category).color}`}>
-                            {mainHero.isFeatured ? 'TIN TIÊU ĐIỂM' : 'BÀI MỚI NHẤT'}
-                        </span>
-                        <h2 className="text-white text-xl md:text-2xl lg:text-[30px] font-black leading-tight mb-5 group-hover:text-yellow-400 transition-colors drop-shadow-2xl line-clamp-3 uppercase tracking-tighter">
+          <section key={block.id} className="mb-12">
+             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="grid grid-cols-1 lg:grid-cols-12">
+                    
+                    {/* LEFT COLUMN: MAIN ARTICLE (7 columns) */}
+                    <div className="lg:col-span-7 p-4 md:p-6 group cursor-pointer relative" onClick={() => onNavigate('news-detail', mainHero.id)}>
+                        <div className="relative overflow-hidden rounded-lg mb-4 h-[300px] md:h-[450px] shadow-sm border border-gray-100">
+                            <img 
+                                src={mainHero.thumbnail} 
+                                alt={mainHero.title} 
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            />
+                            <div className="absolute top-4 left-4">
+                                <span className={`text-white text-[11px] font-black px-4 py-1.5 uppercase rounded-full shadow-lg ${getCategoryBadge(mainHero.category).color}`}>
+                                    {mainHero.isFeatured ? 'TIN TIÊU ĐIỂM' : 'BÀI MỚI NHẤT'}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <h2 className="text-xl md:text-2xl lg:text-[26px] font-bold text-[#1e3a8a] uppercase mb-3 leading-snug group-hover:text-red-700 transition-colors line-clamp-3">
                             {mainHero.title}
                         </h2>
-                        <p className="text-gray-200 text-[15px] line-clamp-2 mb-5 opacity-100 max-w-3xl font-medium leading-relaxed drop-shadow-md">{mainHero.summary}</p>
-                        <div className="flex items-center text-gray-300 text-[12px] gap-4 font-bold uppercase tracking-widest">
-                            <span className="flex items-center gap-2 bg-black/30 px-3 py-1 rounded-lg backdrop-blur-sm border border-white/10">
-                                <Calendar size={14} className="text-yellow-400"/> {formatVNTime(mainHero.date)}
+                        <p className="text-gray-600 text-justify line-clamp-3 mb-4 text-[15px] leading-relaxed">
+                            {mainHero.summary}
+                        </p>
+                        <div className="flex items-center justify-end text-blue-600 font-bold text-sm">
+                            <span className="flex items-center gap-1 group-hover:gap-2 transition-all bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100">
+                                Xem tiếp <FileText size={14}/> 
                             </span>
                         </div>
                     </div>
-                </div>
-                <div className="md:col-span-4 flex flex-col gap-2 h-[300px] md:h-[520px]">
-                    {subHeros.map(sub => (
-                        <div key={sub.id} className="relative flex-1 group cursor-pointer overflow-hidden bg-gray-900" onClick={() => onNavigate('news-detail', sub.id)}>
-                            <img src={sub.thumbnail} alt={sub.title} className="w-full h-full object-cover opacity-100 brightness-110 group-hover:scale-110 transition-all duration-1000" loading="lazy" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                            <div className="absolute bottom-0 left-0 p-5 w-full">
-                                <div className="text-[10px] text-yellow-400 font-bold mb-1 flex items-center gap-2">
-                                    <span>{formatVNTime(sub.date)}</span>
-                                </div>
-                                <h3 className="text-white text-[15px] font-black leading-snug group-hover:text-yellow-400 transition-colors drop-shadow-lg line-clamp-3 uppercase">{sub.title}</h3>
+
+                    {/* RIGHT COLUMN: SUB ARTICLES LIST (5 columns) */}
+                    <div className="lg:col-span-5 bg-gray-50/50 border-t lg:border-t-0 lg:border-l border-gray-200">
+                        <div className="flex flex-col h-full">
+                            <div className="p-4 border-b border-gray-200 bg-white">
+                                <h3 className="font-bold text-red-700 uppercase text-sm flex items-center">
+                                    <Star size={16} className="mr-2 fill-red-700"/> Tin khác
+                                </h3>
+                            </div>
+                            <div className="flex-1 overflow-y-auto max-h-[580px] custom-scrollbar p-2">
+                                {subHeros.map((sub, idx) => (
+                                    <div key={sub.id} className={`flex gap-4 p-3 hover:bg-white rounded-lg transition-all cursor-pointer group/sub border-b border-gray-100 last:border-0 ${idx % 2 === 0 ? '' : ''}`} onClick={() => onNavigate('news-detail', sub.id)}>
+                                        <div className="w-32 h-20 shrink-0 overflow-hidden rounded border border-gray-200 relative">
+                                            <img 
+                                                src={sub.thumbnail} 
+                                                className="w-full h-full object-cover transition-transform duration-500 group-hover/sub:scale-110" 
+                                                alt="" loading="lazy" 
+                                            />
+                                        </div>
+                                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                                            <h4 className="text-[14px] font-bold text-gray-800 leading-snug line-clamp-3 group-hover/sub:text-blue-700 transition-colors uppercase">
+                                                {sub.title}
+                                            </h4>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{formatVNTime(sub.date)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    ))}
+                    </div>
+
                 </div>
              </div>
           </section>

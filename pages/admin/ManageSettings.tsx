@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { SchoolConfig, FooterLink } from '../../types';
 import { DatabaseService } from '../../services/database';
-import { Settings, Globe, Phone, Share2, Search, Save, Layout, Upload, Link as LinkIcon, Image as ImageIcon, FolderOpen, Palette, MessageCircle, List, Plus, Trash2, AlertCircle, RotateCcw, Monitor, UploadCloud, MoveVertical, RefreshCcw } from 'lucide-react';
+// Added UploadCloud to fix the error on line 257
+import { Settings, Globe, Phone, Share2, Search, Save, Layout, Upload, Link as LinkIcon, Image as ImageIcon, FolderOpen, Palette, MessageCircle, List, Plus, Trash2, AlertCircle, RotateCcw, Monitor, UploadCloud } from 'lucide-react';
 
 export const ManageSettings: React.FC = () => {
   const [config, setConfig] = useState<SchoolConfig | null>(null);
@@ -28,16 +29,12 @@ export const ManageSettings: React.FC = () => {
         alert("Cấu hình đã được lưu thành công! Website sẽ cập nhật ngay lập tức.");
         window.location.reload(); 
     } catch (e: any) {
-        console.error("Save error:", e);
+        console.error(e);
         const errorMsg = e.message || JSON.stringify(e);
-        
-        // Nhận diện lỗi thiếu cột banner_height (Bao gồm cả lỗi schema cache như trong ảnh)
-        if (errorMsg.includes('banner_height') && (errorMsg.includes('column') || errorMsg.includes('schema cache'))) {
-            setErrorStatus("MISSING_COLUMN_BANNER");
-        } else if (errorMsg.includes('footer_links') && (errorMsg.includes('column') || errorMsg.includes('schema cache'))) {
-            setErrorStatus("MISSING_COLUMN_FOOTER");
+        if (errorMsg.includes('column "footer_links" of relation "school_config" does not exist')) {
+            setErrorStatus("MISSING_COLUMN");
         } else {
-            alert("Lỗi khi lưu dữ liệu vào Database: " + errorMsg);
+            alert("Lỗi khi lưu: " + errorMsg);
         }
     } finally {
         setIsSaving(false);
@@ -115,38 +112,27 @@ export const ManageSettings: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in font-sans">
-       {/* Thông báo hướng dẫn khắc phục lỗi thiếu cột Database */}
-       {errorStatus && (
+       {/* Error Help Notification */}
+       {errorStatus === 'MISSING_COLUMN' && (
          <div className="bg-red-50 border-2 border-red-200 p-6 rounded-2xl shadow-lg animate-fade-in">
             <div className="flex items-center gap-3 text-red-700 mb-4">
                <AlertCircle size={32} />
                <h3 className="text-xl font-black uppercase">Lỗi Cơ sở dữ liệu</h3>
             </div>
             <p className="text-sm text-red-900 mb-4 leading-relaxed font-bold">
-              {errorStatus === 'MISSING_COLUMN_FOOTER' 
-                ? "Hệ thống chưa tìm thấy cột 'footer_links' trong bảng school_config." 
-                : "Hệ thống chưa tìm thấy cột 'banner_height' để lưu kích thước banner."}
-               Vui lòng thực hiện các bước sau:
+              Hệ thống chưa tìm thấy cột "footer_links" trong bảng school_config. Bạn cần vào Supabase SQL Editor và chạy đoạn mã sau để sửa lỗi:
             </p>
-            <ol className="list-decimal ml-6 mb-4 text-sm text-red-800 space-y-1">
-               <li>Mở trang Quản trị Supabase của bạn.</li>
-               <li>Vào mục <b>SQL Editor</b>.</li>
-               <li>Copy mã SQL bên dưới và dán vào đó, sau đó nhấn <b>RUN</b>.</li>
-            </ol>
             <div className="bg-slate-900 text-slate-300 p-4 rounded-xl font-mono text-[11px] overflow-x-auto relative group mb-4">
                <button 
                  onClick={() => {
-                   const sql = errorStatus === 'MISSING_COLUMN_FOOTER' 
-                      ? "ALTER TABLE school_config ADD COLUMN IF NOT EXISTS footer_links JSONB DEFAULT '[]';"
-                      : "ALTER TABLE school_config ADD COLUMN IF NOT EXISTS banner_height INTEGER DEFAULT 400;";
-                   navigator.clipboard.writeText(sql);
+                   navigator.clipboard.writeText("ALTER TABLE school_config ADD COLUMN IF NOT EXISTS footer_links JSONB DEFAULT '[]';");
                    alert("Đã sao chép mã SQL!");
                  }}
                  className="absolute right-2 top-2 bg-blue-600 text-white px-2 py-1 rounded text-[10px] font-bold"
-               >Copy SQL</button>
+               >Copy</button>
                <code>
                  ALTER TABLE school_config <br/>
-                 ADD COLUMN IF NOT EXISTS {errorStatus === 'MISSING_COLUMN_FOOTER' ? 'footer_links JSONB DEFAULT \'[]\'' : 'banner_height INTEGER DEFAULT 400'};
+                 ADD COLUMN IF NOT EXISTS footer_links JSONB DEFAULT '[]';
                </code>
             </div>
             <button 
@@ -248,57 +234,16 @@ export const ManageSettings: React.FC = () => {
 
                {/* BANNER UPLOAD SECTION */}
                <div className="border-t-2 border-gray-50 pt-10">
-                  <div className="flex items-center justify-between mb-4">
-                     <div className="flex items-center gap-2">
-                        <Monitor size={20} className="text-blue-600"/>
-                        <h4 className="font-black text-gray-800 uppercase text-sm tracking-widest">Ảnh Banner Trang Chủ (Phông nền tiêu đề)</h4>
-                     </div>
+                  <div className="flex items-center gap-2 mb-4">
+                     <Monitor size={20} className="text-blue-600"/>
+                     <h4 className="font-black text-gray-800 uppercase text-sm tracking-widest">Ảnh Banner Trang Chủ (Phông nền tiêu đề)</h4>
                   </div>
                   
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                      <div className="lg:col-span-4 space-y-4">
                         <p className="text-xs text-gray-500 leading-relaxed italic">
-                           Ảnh banner sẽ hiển thị làm phông nền phía sau tên trường ở phần đầu trang.
+                           Ảnh banner sẽ hiển thị làm phông nền phía sau tên trường ở phần đầu trang. Nên chọn ảnh nằm ngang, độ phân giải cao.
                         </p>
-                        
-                        {/* CẤU HÌNH CHIỀU CAO BANNER */}
-                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                            <div className="flex justify-between items-center mb-3">
-                                <label className="flex items-center text-xs font-black text-blue-800 uppercase tracking-widest">
-                                    <MoveVertical size={14} className="mr-1"/> Chiều cao Banner (Desktop)
-                                </label>
-                                <button 
-                                    onClick={() => setConfig({...config, bannerHeight: 400})}
-                                    className="text-[10px] text-blue-500 hover:text-blue-700 flex items-center gap-1 font-bold bg-white px-2 py-1 rounded shadow-sm"
-                                >
-                                    <RefreshCcw size={10} /> Mặc định
-                                </button>
-                            </div>
-                            
-                            <div className="flex items-center gap-3">
-                                <input 
-                                    type="range" 
-                                    min="200" 
-                                    max="800" 
-                                    step="10"
-                                    className="flex-1 h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                                    value={config.bannerHeight || 400}
-                                    onChange={e => setConfig({...config, bannerHeight: parseInt(e.target.value)})}
-                                />
-                                <div className="flex items-center bg-white border border-blue-200 rounded-lg px-2 shadow-inner">
-                                    <input 
-                                        type="number"
-                                        min="200"
-                                        max="800"
-                                        className="w-12 py-1.5 text-center font-bold text-blue-900 outline-none text-xs"
-                                        value={config.bannerHeight || 400}
-                                        onChange={e => setConfig({...config, bannerHeight: parseInt(e.target.value) || 400})}
-                                    />
-                                    <span className="text-[10px] text-blue-400 font-bold">px</span>
-                                </div>
-                            </div>
-                        </div>
-
                         <div className="flex flex-col gap-3">
                            <input 
                               type="text" 
@@ -319,10 +264,7 @@ export const ManageSettings: React.FC = () => {
                      
                      <div className="lg:col-span-8">
                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Xem trước Banner:</label>
-                        <div 
-                            className="relative w-full rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-slate-100 group transition-all duration-300"
-                            style={{ height: `${(config.bannerHeight || 400) / 2}px` }} 
-                        >
+                        <div className="relative w-full aspect-[4/1] rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-slate-100 group">
                            {config.bannerUrl ? (
                               <>
                                  <img src={config.bannerUrl} alt="Banner Preview" className="w-full h-full object-cover" />
@@ -395,7 +337,7 @@ export const ManageSettings: React.FC = () => {
                   </table>
                </div>
             </div>
-         )}
+          )}
 
           {activeTab === 'home' && (
              <div className="space-y-6 max-w-3xl">

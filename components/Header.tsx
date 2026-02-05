@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { SchoolConfig, MenuItem } from '../types';
-import { Menu, X, GraduationCap, Phone, Mail, Facebook, Youtube, LogIn } from 'lucide-react';
+import { Menu, X, GraduationCap, Phone, Mail, Facebook, Youtube, LogIn, UserCircle } from 'lucide-react';
 
 interface HeaderProps {
   config: SchoolConfig;
@@ -24,8 +24,6 @@ export const Header: React.FC<HeaderProps> = ({ config, menuItems, onNavigate, a
 
   const hasBanner = !!config.bannerUrl;
   const primaryBg = config.primaryColor || '#1e3a8a';
-  // Mặc định chiều cao banner là 400px nếu chưa cấu hình
-  const bannerHeight = config.bannerHeight || 400;
 
   return (
     <header className="flex flex-col shadow-md relative z-50">
@@ -50,20 +48,19 @@ export const Header: React.FC<HeaderProps> = ({ config, menuItems, onNavigate, a
         </div>
       </div>
 
-      {/* 2. BRANDING AREA - CẬP NHẬT: RESPONSIVE HEIGHT */}
+      {/* 2. BRANDING AREA */}
       <div 
-        className="bg-white relative transition-all duration-300 border-b border-gray-100 overflow-hidden h-[300px] md:h-[var(--desktop-height)]"
+        className="bg-white relative transition-all duration-300 border-b border-gray-100 overflow-hidden"
         style={{ 
             backgroundImage: hasBanner ? `url(${config.bannerUrl})` : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            '--desktop-height': `${bannerHeight}px` 
-        } as React.CSSProperties}
+        }}
       >
          {hasBanner && <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent"></div>}
          {hasBanner && <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-white/10 to-transparent"></div>}
          
-         <div className="container mx-auto px-4 relative z-10 h-full flex flex-col justify-center">
+         <div className="container mx-auto px-4 py-5 md:py-8 relative z-10">
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4 md:gap-6 cursor-pointer group" onClick={() => handleNav('home')}>
                     <div className="w-20 h-20 md:w-28 md:h-28 bg-white rounded-full flex items-center justify-center text-blue-900 shadow-xl border-2 border-yellow-400 p-1 shrink-0 overflow-hidden transform group-hover:scale-105 transition-transform">
@@ -92,7 +89,13 @@ export const Header: React.FC<HeaderProps> = ({ config, menuItems, onNavigate, a
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* Nút Đăng nhập đã được gỡ bỏ ở đây để giao diện sạch sẽ hơn */}
+                    <button 
+                        onClick={() => handleNav('login')} 
+                        className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-white/95 hover:bg-red-700 text-red-700 hover:text-white border-2 border-red-700 rounded-xl font-bold uppercase text-sm transition-all shadow-lg hover:shadow-red-200 active:scale-95"
+                    >
+                        <UserCircle size={18} />
+                        <span>Đăng nhập</span>
+                    </button>
                     <button 
                         className="lg:hidden p-2.5 rounded-xl text-blue-900 bg-white/95 hover:bg-blue-50 border-2 border-blue-200 shadow-md"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -104,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({ config, menuItems, onNavigate, a
          </div>
       </div>
 
-      {/* 3. NAVIGATION BAR */}
+      {/* 3. NAVIGATION BAR - Sử dụng màu chủ đạo cho Menu */}
       <div 
         className="shadow-xl border-t-4 border-yellow-500 sticky top-0 z-40"
         style={{ backgroundColor: primaryBg }}
@@ -144,7 +147,9 @@ export const Header: React.FC<HeaderProps> = ({ config, menuItems, onNavigate, a
                 {item.label}
               </button>
             ))}
-            {/* Nút Đăng nhập trong Menu di động cũng đã được gỡ bỏ */}
+            <button onClick={() => handleNav('login')} className="text-left font-bold p-4 text-red-700 bg-red-50 flex items-center gap-2 text-base tracking-tight">
+               <LogIn size={22}/> ĐĂNG NHẬP HỆ THỐNG
+            </button>
           </div>
         </div>
       )}

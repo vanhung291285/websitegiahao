@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { SchoolDocument, DocumentCategory } from '../../types';
 import { DatabaseService } from '../../services/database';
-import { Plus, Trash2, Link as LinkIcon, ExternalLink, Settings, List, FolderOpen, UploadCloud, FileText, CheckCircle, X, Edit, Save, ArrowUp, ArrowDown, RotateCcw, AlertCircle, Calendar } from 'lucide-react';
+import { Plus, Trash2, Link as LinkIcon, ExternalLink, Settings, List, FolderOpen, UploadCloud, FileText, CheckCircle, X, Edit, Save, ArrowUp, ArrowDown, RotateCcw, AlertCircle } from 'lucide-react';
 
 interface ManageDocumentsProps {
   documents: SchoolDocument[];
@@ -190,28 +190,6 @@ export const ManageDocuments: React.FC<ManageDocumentsProps> = ({ documents, cat
   };
 
   const displayCategories = [...categories].sort((a,b) => (a.order || 0) - (b.order || 0));
-  
-  // Sắp xếp danh sách tài liệu hiển thị trong Admin theo ngày mới nhất (để dễ kiểm tra)
-  const sortedAdminDocs = [...documents].sort((a, b) => {
-      // Helper parse để sort chính xác
-      const parse = (dStr: string) => {
-          if (!dStr) return 0;
-          if (dStr.match(/^\d{4}-\d{2}-\d{2}/)) return new Date(dStr).getTime();
-          if (dStr.match(/^\d{2}\/\d{2}\/\d{4}/)) {
-              const [d, m, y] = dStr.split('/');
-              return new Date(parseInt(y), parseInt(m) - 1, parseInt(d)).getTime();
-          }
-          return 0;
-      };
-      return parse(b.date) - parse(a.date);
-  });
-
-  const formatDisplayDate = (dateStr: string) => {
-      try {
-          if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}/)) return dateStr;
-          return new Date(dateStr).toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric'});
-      } catch(e) { return dateStr; }
-  };
 
   return (
     <div className="space-y-6">
@@ -275,21 +253,13 @@ export const ManageDocuments: React.FC<ManageDocumentsProps> = ({ documents, cat
         <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
             <table className="w-full text-left">
                 <thead className="bg-gray-100 text-gray-900 font-bold uppercase text-xs border-b">
-                    <tr>
-                        <th className="p-4">Loại</th>
-                        <th className="p-4">Số hiệu</th>
-                        <th className="p-4">Ngày BH</th>
-                        <th className="p-4">Trích yếu</th>
-                        <th className="p-4 text-center">Nguồn</th>
-                        <th className="p-4 text-right">Xóa</th>
-                    </tr>
+                    <tr><th className="p-4">Loại</th><th className="p-4">Số hiệu</th><th className="p-4">Trích yếu</th><th className="p-4">Nguồn</th><th className="p-4 text-right">Xóa</th></tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                    {sortedAdminDocs.map(doc => (
+                    {documents.map(doc => (
                         <tr key={doc.id} className="hover:bg-blue-50">
                             <td className="p-4 text-xs font-bold text-gray-500 uppercase">{categories.find(c => c.id === doc.categoryId)?.name || 'Khác'}</td>
                             <td className="p-4 font-mono text-sm font-semibold">{doc.number}</td>
-                            <td className="p-4 font-mono text-sm text-blue-700 font-bold whitespace-nowrap">{formatDisplayDate(doc.date)}</td>
                             <td className="p-4 font-bold text-gray-800">{doc.title}</td>
                             <td className="p-4 text-center">
                                 {doc.downloadUrl && doc.downloadUrl !== '#' && <a href={doc.downloadUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline flex items-center justify-center"><ExternalLink size={14}/></a>}

@@ -1,4 +1,5 @@
 
+
 export enum UserRole {
   ADMIN = 'ADMIN',   // Quản trị viên cao cấp
   EDITOR = 'EDITOR', // Biên tập viên
@@ -156,7 +157,6 @@ export interface SchoolConfig {
   logoUrl: string;
   faviconUrl?: string;
   bannerUrl: string;
-  bannerHeight?: number; // Cấu hình chiều cao banner (px)
   principalName: string;
   address: string;
   phone: string;

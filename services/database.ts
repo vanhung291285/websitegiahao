@@ -2,27 +2,125 @@
 import { supabase } from './supabaseClient';
 import { Post, SchoolConfig, SchoolDocument, GalleryImage, GalleryAlbum, User, UserRole, MenuItem, DisplayBlock, DocumentCategory, StaffMember, IntroductionArticle, PostCategory, Video } from '../types';
 
+// Helper: Lấy ngày giờ hiện tại Việt Nam dưới dạng số nguyên để so sánh toán học chính xác
+// Ví dụ: 27/10/2024 -> Trả về { dateInt: 20241027, monthInt: 202410 }
+const getVNTimeNumeric = () => {
+  const now = new Date();
+  const vnString = now.toLocaleDateString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh' }); // DD/MM/YYYY
+  const [day, month, year] = vnString.split('/');
+  return {
+    dateInt: parseInt(`${year}${month}${day}`), // 20241027
+    monthInt: parseInt(`${year}${month}`)       // 202410
+  };
+};
+
 export const DatabaseService = {
-  // --- VISITOR STATS ---
+  // --- VISITOR STATS (TỐI ƯU HÓA LOGIC SỐ HỌC) ---
   trackVisit: async () => {
     try {
+      // 1. Heartbeat: Cập nhật trạng thái Online
       const sessionId = sessionStorage.getItem('visitor_session_id') || crypto.randomUUID();
       sessionStorage.setItem('visitor_session_id', sessionId);
+      
       await supabase.from('visitor_logs').upsert({ 
         session_id: sessionId,
         last_active: new Date().toISOString() 
       }, { onConflict: 'session_id' });
+
+      // 2. Logic đếm lượt truy cập (Chỉ đếm 1 lần/phiên/ngày)
+      const { dateInt, monthInt } = getVNTimeNumeric();
+      const visitKey = `counted_visit_${dateInt}`;
+      
+      if (sessionStorage.getItem(visitKey)) {
+          return; // Đã đếm cho phiên này trong ngày hôm nay
+      }
+
+      // Lấy dữ liệu hiện tại
+      const { data: counters } = await supabase.from('site_counters').select('*');
+      const statsMap: any = {};
+      counters?.forEach(c => { statsMap[c.key] = parseInt(c.value); });
+
+      const lastResetDate = statsMap['last_reset_date'] || 0;
+      
+      let newToday = statsMap['today_visits'] || 0;
+      let newMonth = statsMap['month_visits'] || 0;
+      let newTotal = statsMap['total_visits'] || 0;
+
+      // LOGIC RESET DỰA TRÊN SO SÁNH SỐ
+      if (dateInt > lastResetDate) {
+          // Sang ngày mới -> Reset hôm nay về 0
+          newToday = 0;
+          
+          // Kiểm tra xem có sang tháng mới không
+          const lastResetMonth = Math.floor(lastResetDate / 100); // 20241027 -> 202410
+          if (monthInt > lastResetMonth) {
+              newMonth = 0;
+          }
+      }
+
+      // Tăng biến đếm
+      newToday++;
+      newMonth++;
+      newTotal++;
+
+      // Cập nhật lại Database
+      await supabase.from('site_counters').upsert([
+          { key: 'today_visits', value: newToday },
+          { key: 'month_visits', value: newMonth },
+          { key: 'total_visits', value: newTotal },
+          { key: 'last_reset_date', value: dateInt } // Lưu mốc thời gian mới (VD: 20241027)
+      ]);
+
+      // Đánh dấu đã tính
+      sessionStorage.setItem(visitKey, 'true');
+
     } catch (e) { console.error("Tracking error", e); }
   },
 
   getVisitorStats: async () => {
     try {
+      // 1. Lấy dữ liệu từ DB
       const { data: counters } = await supabase.from('site_counters').select('*');
-      const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-      const { count: onlineCount } = await supabase.from('visitor_logs').select('*', { count: 'exact', head: true }).gt('last_active', tenMinsAgo);
       const statsMap: any = {};
       counters?.forEach(c => { statsMap[c.key] = parseInt(c.value); });
-      return { total: statsMap['total_visits'] || 0, today: statsMap['today_visits'] || 0, month: statsMap['month_visits'] || 0, online: onlineCount || 1 };
+
+      // 2. Lấy số người đang online (trong 10 phút)
+      const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { count: onlineCount } = await supabase.from('visitor_logs')
+        .select('*', { count: 'exact', head: true })
+        .gt('last_active', tenMinsAgo);
+
+      // 3. Xử lý hiển thị thông minh (Client-side Reset Check)
+      const { dateInt, monthInt } = getVNTimeNumeric();
+      const lastResetDate = statsMap['last_reset_date'] || 0;
+      const lastResetMonth = Math.floor(lastResetDate / 100);
+
+      let displayToday = statsMap['today_visits'] || 0;
+      let displayMonth = statsMap['month_visits'] || 0;
+      let displayTotal = statsMap['total_visits'] || 0;
+
+      // Nếu DB chưa kịp cập nhật ngày mới -> Reset về 0
+      if (dateInt > lastResetDate) {
+          displayToday = 0; 
+          if (monthInt > lastResetMonth) {
+              displayMonth = 0; 
+          }
+      }
+
+      // 4. LOGIC CỘNG DỒN ONLINE (Theo yêu cầu)
+      // Cộng số người đang Online vào các chỉ số để đảm bảo: Hôm nay >= Online
+      const currentOnline = onlineCount || 1; // Tối thiểu là 1 (chính mình)
+      
+      const finalToday = displayToday + currentOnline;
+      const finalMonth = displayMonth + currentOnline;
+      const finalTotal = displayTotal + currentOnline;
+
+      return { 
+          total: finalTotal, 
+          today: finalToday, 
+          month: finalMonth, 
+          online: currentOnline 
+      };
     } catch (e) { return { total: 0, today: 0, month: 0, online: 1 }; }
   },
 
@@ -34,7 +132,8 @@ export const DatabaseService = {
        slogan: data.slogan, 
        logoUrl: data.logo_url, 
        faviconUrl: data.favicon_url,
-       bannerUrl: data.banner_url, 
+       bannerUrl: data.banner_url,
+       bannerHeight: data.banner_height || 400,
        principalName: data.principal_name, 
        address: data.address,
        phone: data.phone, 
@@ -65,6 +164,7 @@ export const DatabaseService = {
        logo_url: config.logoUrl, 
        favicon_url: config.faviconUrl,
        banner_url: config.bannerUrl, 
+       banner_height: config.bannerHeight || 400, // Đảm bảo luôn có giá trị số
        principal_name: config.principalName, 
        address: config.address,
        phone: config.phone, 
@@ -85,8 +185,16 @@ export const DatabaseService = {
        meta_description: config.metaDescription, 
        footer_links: config.footerLinks
     };
-    if (current && current.length > 0) return supabase.from('school_config').update(dbData).eq('id', current[0].id);
-    return supabase.from('school_config').insert(dbData);
+    
+    let result;
+    if (current && current.length > 0) {
+      result = await supabase.from('school_config').update(dbData).eq('id', current[0].id);
+    } else {
+      result = await supabase.from('school_config').insert(dbData);
+    }
+
+    if (result.error) throw result.error;
+    return result;
   },
 
   // --- SHARED CATEGORIES ---
@@ -134,7 +242,6 @@ export const DatabaseService = {
 
   // --- POSTS ---
   getPosts: async (): Promise<Post[]> => {
-    // Sắp xếp ưu tiên: Ngày đăng (mới nhất) -> Ngày tạo (mới nhất)
     const { data } = await supabase
         .from('posts')
         .select('*')
@@ -174,7 +281,8 @@ export const DatabaseService = {
 
   // --- DOCUMENTS ---
   getDocuments: async (): Promise<SchoolDocument[]> => {
-    const { data } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
+    // SẮP XẾP THEO NGÀY BAN HÀNH (date) GIẢM DẦN (MỚI NHẤT LÊN ĐẦU)
+    const { data } = await supabase.from('documents').select('*').order('date', { ascending: false });
     return (data || []).map((d: any) => ({ id: d.id, number: d.number, title: d.title, date: d.date, categoryId: d.category_id, downloadUrl: d.download_url }));
   },
   saveDocument: async (doc: SchoolDocument) => {
@@ -237,7 +345,6 @@ export const DatabaseService = {
   saveMenu: async (items: MenuItem[]) => {
       for (const m of items) {
           const dbData = { label: m.label, path: m.path, order_index: m.order };
-          // PHÂN BIỆT THỰC SỰ GIỮA INSERT VÀ UPDATE CHO MENU
           const isRealUuid = m.id && m.id.includes('-') && m.id.length > 20;
           
           if (isRealUuid) {

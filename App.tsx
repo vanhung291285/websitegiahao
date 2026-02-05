@@ -27,7 +27,7 @@ import { Dashboard } from './pages/admin/Dashboard';
 import { DatabaseService } from './services/database'; 
 import { supabase } from './services/supabaseClient';
 import { PageRoute, Post, SchoolConfig, SchoolDocument, GalleryImage, GalleryAlbum, User, UserRole, DisplayBlock, MenuItem, DocumentCategory, StaffMember, IntroductionArticle, PostCategory, Video } from './types';
-import { Loader2, Share2, Facebook, Printer, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Share2, Facebook, Printer, Link as LinkIcon, Calendar, Eye } from 'lucide-react';
 
 const FALLBACK_CONFIG: SchoolConfig = {
   name: 'Trường PTDTBT TH và THCS Suối Lư',
@@ -73,6 +73,15 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Helper để format ngày hiển thị (Không lấy giờ)
+  const formatDateOnly = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('vi-VN', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    } catch (e) { return dateStr; }
+  };
 
   const safePushState = (url: string) => {
     try {
@@ -315,7 +324,6 @@ const App: React.FC = () => {
             posts={posts} 
             postCategories={postCategories} 
             docCategories={docCategories}
-            /* Đã thêm documents và staffList để sửa lỗi màn hình đen */
             documents={documents}
             staffList={staffList}
             config={config} 
@@ -351,7 +359,9 @@ const App: React.FC = () => {
                     </span>
                     <h3 className="font-bold text-lg mb-2 group-hover:text-blue-700 leading-snug">{post.title}</h3>
                     <p className="text-gray-700 text-sm line-clamp-2 mb-2 flex-grow">{post.summary}</p>
-                    <div className="text-xs text-gray-400 mt-auto pt-2 border-t border-gray-100">{post.date}</div>
+                    <div className="text-xs text-gray-400 mt-auto pt-2 border-t border-gray-100 flex items-center gap-4">
+                        <span className="flex items-center gap-1"><Calendar size={12}/> {formatDateOnly(post.date)}</span>
+                    </div>
                     </div>
                 )})}
                 </div>
@@ -376,11 +386,9 @@ const App: React.FC = () => {
                               <div className="flex flex-wrap items-center gap-4 text-gray-600 text-sm border-b pb-4 border-gray-100 mb-4">
                                 <span className={`font-bold text-${cat?.color || 'blue'}-700`}>{(cat?.name || post.category).toUpperCase()}</span>
                                 <span>|</span>
-                                <span className="flex items-center gap-1">{post.date}</span>
+                                <span className="flex items-center gap-1 font-medium"><Calendar size={14} className="text-blue-600"/> {formatDateOnly(post.date)}</span>
                                 <span>|</span>
-                                <span>Tác giả: {post.author}</span>
-                                <span>|</span>
-                                <span>{post.views} lượt xem</span>
+                                <span className="italic">Tác giả: {post.author}</span>
                               </div>
 
                               {/* Sharing Buttons */}
@@ -388,40 +396,10 @@ const App: React.FC = () => {
                                 <span className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
                                   <Share2 size={14}/> Chia sẻ:
                                 </span>
-                                
-                                {/* Facebook Share */}
-                                <button 
-                                  onClick={() => shareFacebook(post.title)}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1877F2] text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"
-                                >
-                                  <Facebook size={14} fill="currentColor"/> Facebook
-                                </button>
-
-                                {/* Zalo Share */}
-                                <button 
-                                  onClick={shareZalo}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0068ff] text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"
-                                >
-                                  <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                                    <span className="text-[#0068ff] text-[8px] font-black">Z</span>
-                                  </div> Zalo
-                                </button>
-
-                                {/* Copy Link */}
-                                <button 
-                                  onClick={copyLink}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"
-                                >
-                                  <LinkIcon size={14}/> Sao chép
-                                </button>
-
-                                {/* Print */}
-                                <button 
-                                  onClick={() => window.print()}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"
-                                >
-                                  <Printer size={14}/> In trang
-                                </button>
+                                <button onClick={() => shareFacebook(post.title)} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1877F2] text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"><Facebook size={14} fill="currentColor"/> Facebook</button>
+                                <button onClick={shareZalo} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0068ff] text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"><div className="w-4 h-4 bg-white rounded-full flex items-center justify-center"><span className="text-[#0068ff] text-[8px] font-black">Z</span></div> Zalo</button>
+                                <button onClick={copyLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"><LinkIcon size={14}/> Sao chép</button>
+                                <button onClick={() => window.print()} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"><Printer size={14}/> In trang</button>
                               </div>
                             </div>
 

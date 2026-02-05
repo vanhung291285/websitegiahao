@@ -42,12 +42,12 @@ export const Home: React.FC<HomeProps> = ({
     }
   };
 
-  const getPostsForBlock = (block: DisplayBlock) => {
+  const getPostsForBlock = (block: DisplayBlock, overrideCount?: number) => {
     let filtered = posts.filter(p => p.status === 'published');
     const source = block.htmlContent || 'all'; 
 
-    if (source === 'featured' || block.type === 'hero') {
-        // Lấy tất cả và sắp xếp theo ngày mới nhất
+    if (source === 'featured') {
+         filtered = filtered.filter(p => p.isFeatured);
     } 
     else if (source !== 'all') {
         filtered = filtered.filter(p => p.category === source);
@@ -59,7 +59,7 @@ export const Home: React.FC<HomeProps> = ({
           if (b.date < a.date) return -1;
           return 0;
       })
-      .slice(0, block.itemCount || 5);
+      .slice(0, overrideCount || block.itemCount || 5);
   };
 
   const getCategoryBadge = (catSlug: string) => {
@@ -78,7 +78,11 @@ export const Home: React.FC<HomeProps> = ({
         return <div key={block.id} className="mb-10" dangerouslySetInnerHTML={{ __html: block.htmlContent || '' }} />;
     }
 
-    const blockPosts = getPostsForBlock(block);
+    // Special handling for Hero to ensure we get 8 items (1 main + 7 subs) regardless of block setting
+    const blockPosts = block.type === 'hero' 
+        ? getPostsForBlock(block, 8) 
+        : getPostsForBlock(block);
+
     const isDocs = block.type === 'docs';
     const isStaff = block.type === 'staff';
     
@@ -185,43 +189,87 @@ export const Home: React.FC<HomeProps> = ({
 
     if (block.type === 'hero') {
         const mainHero = blockPosts[0]; 
-        const subHeros = blockPosts.slice(1, 3);
+        const subHeros = blockPosts.slice(1, 8); // Get next 7 items
         if (!mainHero) return null;
+
         return (
-          <section key={block.id} className="mb-10">
-             <div className="grid grid-cols-1 md:grid-cols-12 gap-2 rounded-2xl overflow-hidden shadow-xl border border-gray-100">
-                <div className="md:col-span-8 relative h-[400px] md:h-[520px] group cursor-pointer overflow-hidden bg-gray-900" onClick={() => onNavigate('news-detail', mainHero.id)}>
-                    <img src={mainHero.thumbnail} alt={mainHero.title} className="w-full h-full object-cover opacity-100 brightness-110 group-hover:scale-105 transition-all duration-1000"/>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 p-6 md:p-10 w-full">
-                        <span className={`text-white text-[11px] font-black px-4 py-1.5 uppercase rounded-full mb-5 inline-block shadow-lg ${getCategoryBadge(mainHero.category).color}`}>
-                            {mainHero.isFeatured ? 'TIN TIÊU ĐIỂM' : 'BÀI MỚI NHẤT'}
-                        </span>
-                        <h2 className="text-white text-xl md:text-2xl lg:text-[30px] font-black leading-tight mb-5 group-hover:text-yellow-400 transition-colors drop-shadow-2xl line-clamp-3 uppercase tracking-tighter">
-                            {mainHero.title}
-                        </h2>
-                        <p className="text-gray-200 text-[15px] line-clamp-2 mb-5 opacity-100 max-w-3xl font-medium leading-relaxed drop-shadow-md">{mainHero.summary}</p>
-                        <div className="flex items-center text-gray-300 text-[12px] gap-4 font-bold uppercase tracking-widest">
-                            <span className="flex items-center gap-2 bg-black/30 px-3 py-1 rounded-lg backdrop-blur-sm border border-white/10">
-                                <Calendar size={14} className="text-yellow-400"/> {formatVNTime(mainHero.date)}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div className="md:col-span-4 flex flex-col gap-2 h-[300px] md:h-[520px]">
-                    {subHeros.map(sub => (
-                        <div key={sub.id} className="relative flex-1 group cursor-pointer overflow-hidden bg-gray-900" onClick={() => onNavigate('news-detail', sub.id)}>
-                            <img src={sub.thumbnail} alt={sub.title} className="w-full h-full object-cover opacity-100 brightness-110 group-hover:scale-110 transition-all duration-1000" loading="lazy" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                            <div className="absolute bottom-0 left-0 p-5 w-full">
-                                <div className="text-[10px] text-yellow-400 font-bold mb-1 flex items-center gap-2">
-                                    <span>{formatVNTime(sub.date)}</span>
-                                </div>
-                                <h3 className="text-white text-[15px] font-black leading-snug group-hover:text-yellow-400 transition-colors drop-shadow-lg line-clamp-3 uppercase">{sub.title}</h3>
+          <section key={block.id} className="mb-10 font-sans">
+             <div className="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-200">
+                 {/* Tiêu đề khối */}
+                 <div className="flex items-center justify-between mb-5 border-b-2 border-red-600 pb-2">
+                    <h2 className="text-red-700 font-bold text-lg uppercase flex items-center tracking-tight">
+                        <Star size={20} className="mr-2 fill-red-600 text-red-600" />
+                        TIN TIÊU ĐIỂM
+                    </h2>
+                    <button 
+                        onClick={() => onNavigate('news')} 
+                        className="text-xs text-gray-500 hover:text-red-600 font-bold flex items-center"
+                    >
+                        Xem thêm <ChevronRight size={14}/>
+                    </button>
+                 </div>
+
+                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Main News - Left Column */}
+                    <div className="lg:col-span-7 group cursor-pointer" onClick={() => onNavigate('news-detail', mainHero.id)}>
+                        <div className="relative overflow-hidden rounded-lg mb-4 shadow-sm border border-gray-100">
+                            <img 
+                                src={mainHero.thumbnail} 
+                                alt={mainHero.title} 
+                                className="w-full h-[300px] md:h-[420px] object-cover transform group-hover:scale-105 transition-transform duration-700"
+                            />
+                            {/* Category Label Overlay */}
+                            <div className="absolute top-4 left-4">
+                                <span className={`text-white text-[10px] font-black px-3 py-1 uppercase rounded shadow-lg ${getCategoryBadge(mainHero.category).color}`}>
+                                    {mainHero.category === 'news' ? 'TIN TỨC' : 'SỰ KIỆN'}
+                                </span>
                             </div>
                         </div>
-                    ))}
-                </div>
+                        <h3 className="text-xl md:text-2xl font-bold text-blue-900 leading-snug mb-3 group-hover:text-red-600 transition-colors uppercase tracking-tight">
+                            {mainHero.title}
+                        </h3>
+                        <p className="text-gray-600 text-sm md:text-[15px] line-clamp-3 leading-relaxed text-justify">
+                            {mainHero.summary}
+                        </p>
+                        <div className="mt-3 flex items-center text-xs text-gray-400 font-bold uppercase tracking-wider">
+                            <Clock size={12} className="mr-1.5"/> {formatVNTime(mainHero.date)}
+                        </div>
+                    </div>
+
+                    {/* Side List (7 items) - Right Column */}
+                    <div className="lg:col-span-5">
+                        <div className="flex flex-col h-full">
+                            {subHeros.map((sub, index) => (
+                                <div 
+                                    key={sub.id} 
+                                    onClick={() => onNavigate('news-detail', sub.id)}
+                                    className="flex gap-4 group cursor-pointer border-b border-gray-100 pb-3 mb-3 last:border-0 last:pb-0 last:mb-0 hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                                >
+                                    <div className="w-28 h-20 shrink-0 overflow-hidden rounded-md shadow-sm border border-gray-200 relative">
+                                        <img 
+                                            src={sub.thumbnail} 
+                                            alt={sub.title} 
+                                            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                                        />
+                                    </div>
+                                    <div className="flex-1 flex flex-col justify-center">
+                                        <h4 className="text-[13px] md:text-[14px] font-bold text-gray-800 leading-snug group-hover:text-blue-700 line-clamp-2 mb-1.5 uppercase tracking-tight">
+                                            {sub.title}
+                                        </h4>
+                                        <div className="flex items-center text-[10px] text-gray-400 font-medium">
+                                            <Calendar size={10} className="mr-1"/> {formatVNTime(sub.date)}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {subHeros.length === 0 && (
+                                <div className="text-center py-10 text-gray-400 text-sm italic">
+                                    Đang cập nhật thêm tin tức...
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                 </div>
              </div>
           </section>
         );

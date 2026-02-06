@@ -28,6 +28,7 @@ import { DatabaseService } from './services/database';
 import { supabase } from './services/supabaseClient';
 import { PageRoute, Post, SchoolConfig, SchoolDocument, GalleryImage, GalleryAlbum, User, UserRole, DisplayBlock, MenuItem, DocumentCategory, StaffMember, IntroductionArticle, PostCategory, Video } from './types';
 import { Loader2, Share2, Facebook, Printer, Link as LinkIcon, Calendar, Eye } from 'lucide-react';
+import { Helmet, HelmetProvider } from 'react-helmet-async';
 
 const FALLBACK_CONFIG: SchoolConfig = {
   name: 'Trường PTDTBT TH và THCS Suối Lư',
@@ -150,21 +151,6 @@ const App: React.FC = () => {
       setCurrentPage('home');
     }
   };
-
-  useEffect(() => {
-    if (config) {
-        document.title = config.metaTitle || config.name;
-        if (config.faviconUrl) {
-            let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-            if (!link) {
-                link = document.createElement('link');
-                link.rel = 'icon';
-                document.head.appendChild(link);
-            }
-            link.href = config.faviconUrl;
-        }
-    }
-  }, [config]);
 
   const refreshData = async (showLoader: boolean = true) => {
     if (showLoader) setLoading(true);
@@ -311,144 +297,169 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100 font-sans text-slate-900">
-      <Header config={config} menuItems={menuItems} onNavigate={navigate} activePath={currentPage} />
-      
-      {!currentPage.startsWith('admin-') && (
-        <NewsTicker posts={posts} onNavigate={navigate} primaryColor={config.primaryColor} />
-      )}
+    <HelmetProvider>
+      <div className="min-h-screen flex flex-col bg-slate-100 font-sans text-slate-900">
+        <Helmet>
+          {/* Cấu hình SEO mặc định (Global) */}
+          <title>{config.metaTitle || config.name}</title>
+          <meta name="description" content={config.metaDescription} />
+          <meta property="og:site_name" content={config.name} />
+          <meta property="og:title" content={config.metaTitle || config.name} />
+          <meta property="og:description" content={config.metaDescription} />
+          <meta property="og:image" content={config.bannerUrl || config.logoUrl} />
+          <meta property="og:type" content="website" />
+        </Helmet>
 
-      <main className="flex-grow w-full">
-        {currentPage === 'home' && (
-          <Home 
-            posts={posts} 
-            postCategories={postCategories} 
-            docCategories={docCategories}
-            documents={documents}
-            staffList={staffList}
-            config={config} 
-            gallery={galleryImages}
-            videos={videos}
-            blocks={blocks}
-            introductions={introductions}
-            onNavigate={(p, id) => navigate(p, id)}
-          />
-        )}
-        {currentPage === 'intro' && <Introduction config={config} />}
-        {currentPage === 'staff' && <Staff staffList={staffList} />}
-        {currentPage === 'documents' && <Documents documents={documents} categories={docCategories} initialCategorySlug="official" />}
-        {currentPage === 'resources' && <Documents documents={documents} categories={docCategories} initialCategorySlug="resource" />}
-        {currentPage === 'gallery' && <Gallery images={galleryImages} albums={albums} />}
+        <Header config={config} menuItems={menuItems} onNavigate={navigate} activePath={currentPage} />
         
-        {currentPage === 'news' && (
-          <div className="container mx-auto px-4 py-10">
-            <div className="bg-white p-6 rounded shadow-sm border border-gray-200">
-                <div className="flex items-center mb-8 pb-2 border-b-2 border-blue-900">
-                    <h2 className="text-2xl font-bold text-blue-900 uppercase">Tin tức & Sự kiện</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {posts.filter(p => p.status === 'published').map(post => {
-                    const cat = postCategories.find(c => c.slug === post.category);
-                    return (
-                    <div key={post.id} onClick={() => navigate('news-detail', post.id)} className="group cursor-pointer flex flex-col h-full">
-                    <div className="overflow-hidden rounded mb-3 border border-gray-200">
-                        <img src={post.thumbnail} className="h-48 w-full object-cover transform group-hover:scale-105 transition duration-500" alt={post.title}/>
-                    </div>
-                    <span className={`text-xs font-bold uppercase mb-1 block text-${cat?.color || 'blue'}-600`}>
-                        {cat?.name || 'Tin tức'}
-                    </span>
-                    <h3 className="font-bold text-lg mb-2 group-hover:text-blue-700 leading-snug">{post.title}</h3>
-                    <p className="text-gray-700 text-sm line-clamp-2 mb-2 flex-grow">{post.summary}</p>
-                    <div className="text-xs text-gray-400 mt-auto pt-2 border-t border-gray-100 flex items-center gap-4">
-                        <span className="flex items-center gap-1"><Calendar size={12}/> {formatDateOnly(post.date)}</span>
-                    </div>
-                    </div>
-                )})}
-                </div>
-            </div>
-          </div>
+        {!currentPage.startsWith('admin-') && (
+          <NewsTicker posts={posts} onNavigate={navigate} primaryColor={config.primaryColor} />
         )}
 
-        {currentPage === 'news-detail' && detailId && (
-          <div className="container mx-auto px-4 py-8">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <div className="lg:col-span-8">
-                    {(() => {
-                      const post = posts.find(p => p.id === detailId);
-                      if (!post) return <div className="p-10 text-center bg-white rounded shadow">Bài viết không tồn tại</div>;
+        <main className="flex-grow w-full">
+          {currentPage === 'home' && (
+            <Home 
+              posts={posts} 
+              postCategories={postCategories} 
+              docCategories={docCategories}
+              documents={documents}
+              staffList={staffList}
+              config={config} 
+              gallery={galleryImages}
+              videos={videos}
+              blocks={blocks}
+              introductions={introductions}
+              onNavigate={(p, id) => navigate(p, id)}
+            />
+          )}
+          {currentPage === 'intro' && <Introduction config={config} />}
+          {currentPage === 'staff' && <Staff staffList={staffList} />}
+          {currentPage === 'documents' && <Documents documents={documents} categories={docCategories} initialCategorySlug="official" />}
+          {currentPage === 'resources' && <Documents documents={documents} categories={docCategories} initialCategorySlug="resource" />}
+          {currentPage === 'gallery' && <Gallery images={galleryImages} albums={albums} />}
+          
+          {currentPage === 'news' && (
+            <div className="container mx-auto px-4 py-10">
+              <div className="bg-white p-6 rounded shadow-sm border border-gray-200">
+                  <div className="flex items-center mb-8 pb-2 border-b-2 border-blue-900">
+                      <h2 className="text-2xl font-bold text-blue-900 uppercase">Tin tức & Sự kiện</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {posts.filter(p => p.status === 'published').map(post => {
                       const cat = postCategories.find(c => c.slug === post.category);
                       return (
-                        <article className="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200">
-                            <div className="mb-6">
-                              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-4">{post.title}</h1>
-                              
-                              {/* Meta Info */}
-                              <div className="flex flex-wrap items-center gap-4 text-gray-600 text-sm border-b pb-4 border-gray-100 mb-4">
-                                <span className={`font-bold text-${cat?.color || 'blue'}-700`}>{(cat?.name || post.category).toUpperCase()}</span>
-                                <span>|</span>
-                                <span className="flex items-center gap-1 font-medium"><Calendar size={14} className="text-blue-600"/> {formatDateOnly(post.date)}</span>
-                                <span>|</span>
-                                <span className="italic">Tác giả: {post.author}</span>
-                              </div>
+                      <div key={post.id} onClick={() => navigate('news-detail', post.id)} className="group cursor-pointer flex flex-col h-full">
+                      <div className="overflow-hidden rounded mb-3 border border-gray-200">
+                          <img src={post.thumbnail} className="h-48 w-full object-cover transform group-hover:scale-105 transition duration-500" alt={post.title}/>
+                      </div>
+                      <span className={`text-xs font-bold uppercase mb-1 block text-${cat?.color || 'blue'}-600`}>
+                          {cat?.name || 'Tin tức'}
+                      </span>
+                      <h3 className="font-bold text-lg mb-2 group-hover:text-blue-700 leading-snug">{post.title}</h3>
+                      <p className="text-gray-700 text-sm line-clamp-2 mb-2 flex-grow">{post.summary}</p>
+                      <div className="text-xs text-gray-400 mt-auto pt-2 border-t border-gray-100 flex items-center gap-4">
+                          <span className="flex items-center gap-1"><Calendar size={12}/> {formatDateOnly(post.date)}</span>
+                      </div>
+                      </div>
+                  )})}
+                  </div>
+              </div>
+            </div>
+          )}
 
-                              {/* Sharing Buttons */}
-                              <div className="flex flex-wrap items-center gap-3 mb-8 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                <span className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
-                                  <Share2 size={14}/> Chia sẻ:
-                                </span>
-                                <button onClick={() => shareFacebook(post.title)} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1877F2] text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"><Facebook size={14} fill="currentColor"/> Facebook</button>
-                                <button onClick={shareZalo} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0068ff] text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"><div className="w-4 h-4 bg-white rounded-full flex items-center justify-center"><span className="text-[#0068ff] text-[8px] font-black">Z</span></div> Zalo</button>
-                                <button onClick={copyLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"><LinkIcon size={14}/> Sao chép</button>
-                                <button onClick={() => window.print()} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"><Printer size={14}/> In trang</button>
-                              </div>
-                            </div>
+          {currentPage === 'news-detail' && detailId && (
+            <div className="container mx-auto px-4 py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  <div className="lg:col-span-8">
+                      {(() => {
+                        const post = posts.find(p => p.id === detailId);
+                        if (!post) return <div className="p-10 text-center bg-white rounded shadow">Bài viết không tồn tại</div>;
+                        const cat = postCategories.find(c => c.slug === post.category);
+                        return (
+                          <article className="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200">
+                              {/* CẤU HÌNH HELMET CHO BÀI VIẾT CHI TIẾT */}
+                              <Helmet>
+                                  <title>{post.title} | {config.name}</title>
+                                  <meta property="og:title" content={post.title} />
+                                  <meta property="og:description" content={post.summary} />
+                                  <meta property="og:image" content={post.thumbnail} />
+                                  <meta property="og:image:width" content="1200" />
+                                  <meta property="og:image:height" content="630" />
+                                  <meta property="og:type" content="article" />
+                                  <meta property="og:url" content={window.location.href} />
+                              </Helmet>
 
-                            <div className="font-semibold text-lg text-gray-800 mb-6 italic bg-gray-50 p-4 border-l-4 border-blue-500 rounded-r">
-                              {post.summary}
-                            </div>
-                            
-                            <div 
-                              className="prose prose-blue prose-lg max-w-none text-gray-900 leading-relaxed text-justify news-content-area"
-                              dangerouslySetInnerHTML={{ __html: post.content }}
-                            />
+                              <div className="mb-6">
+                                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-4">{post.title}</h1>
+                                
+                                {/* Meta Info */}
+                                <div className="flex flex-wrap items-center gap-4 text-gray-600 text-sm border-b pb-4 border-gray-100 mb-4">
+                                  <span className={`font-bold text-${cat?.color || 'blue'}-700`}>{(cat?.name || post.category).toUpperCase()}</span>
+                                  <span>|</span>
+                                  <span className="flex items-center gap-1 font-medium"><Calendar size={14} className="text-blue-600"/> {formatDateOnly(post.date)}</span>
+                                  <span>|</span>
+                                  <span className="italic">Tác giả: {post.author}</span>
+                                </div>
 
-                            {/* Tags Section */}
-                            {post.tags && post.tags.length > 0 && (
-                              <div className="mt-10 pt-6 border-t border-gray-100">
-                                <div className="flex flex-wrap gap-2">
-                                  <span className="text-sm font-bold text-gray-400 uppercase mr-2">Tags:</span>
-                                  {post.tags.map(tag => (
-                                    <span key={tag} className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full border border-slate-200">#{tag}</span>
-                                  ))}
+                                {/* Sharing Buttons */}
+                                <div className="flex flex-wrap items-center gap-3 mb-8 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                  <span className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                    <Share2 size={14}/> Chia sẻ:
+                                  </span>
+                                  <button onClick={() => shareFacebook(post.title)} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1877F2] text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"><Facebook size={14} fill="currentColor"/> Facebook</button>
+                                  <button onClick={shareZalo} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0068ff] text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"><div className="w-4 h-4 bg-white rounded-full flex items-center justify-center"><span className="text-[#0068ff] text-[8px] font-black">Z</span></div> Zalo</button>
+                                  <button onClick={copyLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"><LinkIcon size={14}/> Sao chép</button>
+                                  <button onClick={() => window.print()} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-white rounded-md text-[13px] font-bold hover:brightness-110 transition shadow-sm"><Printer size={14}/> In trang</button>
                                 </div>
                               </div>
-                            )}
-                        </article>
-                      );
-                    })()}
+
+                              <div className="font-semibold text-lg text-gray-800 mb-6 italic bg-gray-50 p-4 border-l-4 border-blue-500 rounded-r">
+                                {post.summary}
+                              </div>
+                              
+                              <div 
+                                className="prose prose-blue prose-lg max-w-none text-gray-900 leading-relaxed text-justify news-content-area"
+                                dangerouslySetInnerHTML={{ __html: post.content }}
+                              />
+
+                              {/* Tags Section */}
+                              {post.tags && post.tags.length > 0 && (
+                                <div className="mt-10 pt-6 border-t border-gray-100">
+                                  <div className="flex flex-wrap gap-2">
+                                    <span className="text-sm font-bold text-gray-400 uppercase mr-2">Tags:</span>
+                                    {post.tags.map(tag => (
+                                      <span key={tag} className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full border border-slate-200">#{tag}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                          </article>
+                        );
+                      })()}
+                  </div>
+                  <div className="lg:col-span-4">
+                      <Sidebar 
+                        blocks={blocks.filter(b => b.position === 'sidebar')} 
+                        posts={posts} 
+                        postCategories={postCategories}
+                        docCategories={docCategories} 
+                        documents={documents} 
+                        onNavigate={navigate} 
+                        currentPage="news-detail" 
+                        videos={videos}
+                      />
+                  </div>
                 </div>
-                <div className="lg:col-span-4">
-                    <Sidebar 
-                      blocks={blocks.filter(b => b.position === 'sidebar')} 
-                      posts={posts} 
-                      postCategories={postCategories}
-                      docCategories={docCategories} 
-                      documents={documents} 
-                      onNavigate={navigate} 
-                      currentPage="news-detail" 
-                      videos={videos}
-                    />
-                </div>
-              </div>
-          </div>
+            </div>
+          )}
+        </main>
+        
+        {config && <Footer config={config} />}
+        {config && !currentPage.startsWith('admin-') && (
+          <FloatingContact config={config} />
         )}
-      </main>
-      
-      {config && <Footer config={config} />}
-      {config && !currentPage.startsWith('admin-') && (
-        <FloatingContact config={config} />
-      )}
-    </div>
+      </div>
+    </HelmetProvider>
   );
 };
 

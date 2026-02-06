@@ -238,7 +238,12 @@ const App: React.FC = () => {
 
   const shareFacebook = (title: string) => {
     const url = window.location.href;
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(title)}`, 'facebook-share-dialog', 'width=800,height=600');
+    // Sử dụng dialog share của FB. Quote hỗ trợ trích dẫn.
+    window.open(
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(title)}`, 
+        'facebook-share-dialog', 
+        'width=800,height=600'
+    );
   };
 
   const shareZalo = () => {
@@ -249,6 +254,15 @@ const App: React.FC = () => {
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     alert("Đã sao chép liên kết vào bộ nhớ tạm!");
+  };
+
+  // Helper để lấy URL ảnh hợp lệ cho Social Share (tránh Base64 vì FB không hỗ trợ)
+  const getSocialImage = (thumbnail?: string) => {
+      if (!thumbnail || thumbnail.startsWith('data:')) {
+          // Fallback sang ảnh banner hoặc logo nếu ảnh bài viết là base64 hoặc không có
+          return config?.bannerUrl || config?.logoUrl || '';
+      }
+      return thumbnail;
   };
 
   if (loading || !config) {
@@ -375,6 +389,8 @@ const App: React.FC = () => {
                         const post = posts.find(p => p.id === detailId);
                         if (!post) return <div className="p-10 text-center bg-white rounded shadow">Bài viết không tồn tại</div>;
                         const cat = postCategories.find(c => c.slug === post.category);
+                        const socialImage = getSocialImage(post.thumbnail);
+
                         return (
                           <article className="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200">
                               {/* CẤU HÌNH HELMET CHO BÀI VIẾT CHI TIẾT */}
@@ -382,7 +398,7 @@ const App: React.FC = () => {
                                   <title>{post.title} | {config.name}</title>
                                   <meta property="og:title" content={post.title} />
                                   <meta property="og:description" content={post.summary} />
-                                  <meta property="og:image" content={post.thumbnail} />
+                                  <meta property="og:image" content={socialImage} />
                                   <meta property="og:image:width" content="1200" />
                                   <meta property="og:image:height" content="630" />
                                   <meta property="og:type" content="article" />
